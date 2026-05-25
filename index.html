@@ -1,242 +1,270 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Rally Racing Fireworks</title>
-  <style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Top View Rally Racing</title>
+
+<style>
     html, body {
-      margin: 0;
-      overflow: hidden;
-      background: #111;
-      font-family: Arial, sans-serif;
+        margin: 0;
+        overflow: hidden;
+        background: #0a0a0a;
+        font-family: Arial, sans-serif;
     }
 
     canvas {
-      display: block;
-      cursor: crosshair;
+        display: block;
     }
 
-    .label {
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      color: white;
-      background: rgba(0,0,0,0.4);
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 14px;
-      backdrop-filter: blur(5px);
+    .info {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        color: white;
+        background: rgba(0,0,0,0.45);
+        padding: 12px 16px;
+        border-radius: 12px;
+        backdrop-filter: blur(6px);
+        font-size: 14px;
     }
-  </style>
+</style>
 </head>
 <body>
 
-<div class="label">
-  Hover over a rally car to trigger fireworks 🎆
+<div class="info">
+    Hover over a car to launch fireworks 🎆
 </div>
 
-<canvas id="scene"></canvas>
+<canvas id="canvas"></canvas>
 
 <script>
-const canvas = document.getElementById('scene');
-const ctx = canvas.getContext('2d');
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
-let w, h, centerX, centerY;
+let w, h, cx, cy;
 
 function resize() {
-  w = canvas.width = window.innerWidth;
-  h = canvas.height = window.innerHeight;
-  centerX = w / 2;
-  centerY = h / 2;
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    cx = w / 2;
+    cy = h / 2;
 }
-window.addEventListener('resize', resize);
+window.addEventListener("resize", resize);
 resize();
 
-// =========================
-// TRACK
-// =========================
-const trackRadius = 230;
-const trackWidth = 90;
 
-// =========================
+// =====================================
+// BIGGER TRACK
+// =====================================
+const trackRadius = 340;
+const trackWidth = 120;
+
+
+// =====================================
 // CARS
-// =========================
+// =====================================
 const cars = [
-  { angle: 0, color: '#ff3b30', fireworks: false },
-  { angle: Math.PI / 2, color: '#34c759', fireworks: false },
-  { angle: Math.PI, color: '#007aff', fireworks: false },
-  { angle: Math.PI * 1.5, color: '#ffcc00', fireworks: false }
+    { angle: 0, color: "#ff3b30" },
+    { angle: Math.PI / 2, color: "#34c759" },
+    { angle: Math.PI, color: "#007aff" },
+    { angle: Math.PI * 1.5, color: "#ffcc00" }
 ];
 
-const carSize = 18;
-
-// =========================
-// FIREWORKS
-// =========================
 const particles = [];
-
-function createExplosion(x, y) {
-  for (let i = 0; i < 40; i++) {
-    particles.push({
-      x,
-      y,
-      vx: (Math.random() - 0.5) * 8,
-      vy: (Math.random() - 0.5) * 8,
-      life: 100,
-      color: `hsl(${Math.random() * 360},100%,60%)`
-    });
-  }
-}
-
-// =========================
-// MOUSE
-// =========================
 const mouse = { x: 0, y: 0 };
 
-canvas.addEventListener('mousemove', (e) => {
-  mouse.x = e.clientX;
-  mouse.y = e.clientY;
+canvas.addEventListener("mousemove", e => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
 });
 
-// =========================
-// DRAW TRACK
-// =========================
-function drawTrack() {
-  // Outer track
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, trackRadius + trackWidth / 2, 0, Math.PI * 2);
-  ctx.fillStyle = '#555';
-  ctx.fill();
 
-  // Inner grass
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, trackRadius - trackWidth / 2, 0, Math.PI * 2);
-  ctx.fillStyle = '#1b5e20';
-  ctx.fill();
-
-  // Dashed center line
-  ctx.beginPath();
-  ctx.setLineDash([12, 12]);
-  ctx.arc(centerX, centerY, trackRadius, 0, Math.PI * 2);
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.setLineDash([]);
-}
-
-// =========================
-// DRAW CARS
-// =========================
-function drawCars() {
-  cars.forEach(car => {
-
-    // Animate movement
-    car.angle += 0.003;
-
-    const x = centerX + Math.cos(car.angle) * trackRadius;
-    const y = centerY + Math.sin(car.angle) * trackRadius;
-
-    car.x = x;
-    car.y = y;
-
-    // Hover detection
-    const dx = mouse.x - x;
-    const dy = mouse.y - y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    car.fireworks = dist < 22;
-
-    // Car body
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(car.angle + Math.PI / 2);
-
-    ctx.fillStyle = car.color;
-    ctx.fillRect(-10, -18, 20, 36);
-
-    // windshield
-    ctx.fillStyle = '#cfe8ff';
-    ctx.fillRect(-7, -10, 14, 12);
-
-    // wheels
-    ctx.fillStyle = '#111';
-    ctx.fillRect(-13, -14, 4, 8);
-    ctx.fillRect(9, -14, 4, 8);
-    ctx.fillRect(-13, 6, 4, 8);
-    ctx.fillRect(9, 6, 4, 8);
-
-    ctx.restore();
-
-    // Fireworks trigger
-    if (car.fireworks && Math.random() < 0.4) {
-      createExplosion(x, y);
+// =====================================
+// FIREWORKS
+// =====================================
+function createExplosion(x, y) {
+    for (let i = 0; i < 45; i++) {
+        particles.push({
+            x,
+            y,
+            vx: (Math.random() - 0.5) * 10,
+            vy: (Math.random() - 0.5) * 10,
+            size: Math.random() * 4 + 2,
+            life: 100,
+            color: `hsl(${Math.random() * 360},100%,60%)`
+        });
     }
-  });
 }
 
-// =========================
-// DRAW PARTICLES
-// =========================
 function drawParticles() {
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i];
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
 
-    p.x += p.vx;
-    p.y += p.vy;
+        p.x += p.vx;
+        p.y += p.vy;
 
-    p.vx *= 0.98;
-    p.vy *= 0.98;
+        p.vx *= 0.97;
+        p.vy *= 0.97;
 
-    p.life--;
+        p.life--;
 
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-    ctx.fillStyle = p.color;
-    ctx.globalAlpha = p.life / 100;
-    ctx.fill();
-    ctx.globalAlpha = 1;
+        ctx.globalAlpha = p.life / 100;
 
-    if (p.life <= 0) {
-      particles.splice(i, 1);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+
+        if (p.life <= 0) {
+            particles.splice(i, 1);
+        }
     }
-  }
 }
 
-// =========================
+
+// =====================================
 // BACKGROUND
-// =========================
+// =====================================
 function drawBackground() {
-  const gradient = ctx.createRadialGradient(
-    centerX,
-    centerY,
-    100,
-    centerX,
-    centerY,
-    w
-  );
+    const gradient = ctx.createRadialGradient(
+        cx, cy, 100,
+        cx, cy, w
+    );
 
-  gradient.addColorStop(0, '#222');
-  gradient.addColorStop(1, '#000');
+    gradient.addColorStop(0, "#1c1c1c");
+    gradient.addColorStop(1, "#000");
 
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, w, h);
 }
 
-// =========================
-// MAIN LOOP
-// =========================
-function animate() {
-  requestAnimationFrame(animate);
 
-  drawBackground();
-  drawTrack();
-  drawCars();
-  drawParticles();
+// =====================================
+// TRACK
+// =====================================
+function drawTrack() {
+
+    // Outer asphalt
+    ctx.beginPath();
+    ctx.arc(cx, cy, trackRadius + trackWidth / 2, 0, Math.PI * 2);
+    ctx.fillStyle = "#555";
+    ctx.fill();
+
+    // Inner grass
+    ctx.beginPath();
+    ctx.arc(cx, cy, trackRadius - trackWidth / 2, 0, Math.PI * 2);
+    ctx.fillStyle = "#1f7a1f";
+    ctx.fill();
+
+    // Racing line
+    ctx.beginPath();
+    ctx.setLineDash([16, 14]);
+    ctx.arc(cx, cy, trackRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+
+// =====================================
+// CAR DRAWING
+// =====================================
+function drawCars() {
+
+    cars.forEach(car => {
+
+        // Move car
+        car.angle += 0.004;
+
+        const x = cx + Math.cos(car.angle) * trackRadius;
+        const y = cy + Math.sin(car.angle) * trackRadius;
+
+        car.x = x;
+        car.y = y;
+
+        // Hover detection
+        const dx = mouse.x - x;
+        const dy = mouse.y - y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 28 && Math.random() < 0.5) {
+            createExplosion(x, y);
+        }
+
+        // =====================================
+        // IMPORTANT:
+        // rotate FORWARD direction
+        // =====================================
+        const rotation = car.angle + Math.PI / 2;
+
+        ctx.save();
+
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+
+        // Shadow
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.fillRect(-14, -28, 28, 56);
+
+        // Car body
+        ctx.fillStyle = car.color;
+        ctx.fillRect(-12, -26, 24, 52);
+
+        // Hood
+        ctx.fillStyle = "#ffffff22";
+        ctx.fillRect(-8, -20, 16, 12);
+
+        // Roof
+        ctx.fillStyle = "#d6ecff";
+        ctx.fillRect(-8, -6, 16, 18);
+
+        // Back glass
+        ctx.fillStyle = "#ffffff22";
+        ctx.fillRect(-8, 16, 16, 8);
+
+        // Wheels
+        ctx.fillStyle = "#111";
+
+        ctx.fillRect(-16, -20, 5, 12);
+        ctx.fillRect(11, -20, 5, 12);
+
+        ctx.fillRect(-16, 8, 5, 12);
+        ctx.fillRect(11, 8, 5, 12);
+
+        // Front headlights
+        ctx.fillStyle = "#fff8b0";
+        ctx.fillRect(-8, -28, 5, 4);
+        ctx.fillRect(3, -28, 5, 4);
+
+        // Rear lights
+        ctx.fillStyle = "#ff3b30";
+        ctx.fillRect(-8, 24, 5, 4);
+        ctx.fillRect(3, 24, 5, 4);
+
+        ctx.restore();
+    });
+}
+
+
+// =====================================
+// ANIMATION
+// =====================================
+function animate() {
+
+    requestAnimationFrame(animate);
+
+    drawBackground();
+    drawTrack();
+    drawCars();
+    drawParticles();
 }
 
 animate();
-</script>
 
+</script>
 </body>
 </html>
