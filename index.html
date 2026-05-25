@@ -1,312 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Rally Track Hover Animation</title>
-
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rally Racing Fireworks</title>
+  <style>
+    html, body {
+      margin: 0;
+      overflow: hidden;
+      background: #111;
+      font-family: Arial, sans-serif;
     }
 
-    body {
-        overflow: hidden;
-        background: #1a1a1a;
-        font-family: Arial, sans-serif;
+    canvas {
+      display: block;
+      cursor: crosshair;
     }
 
-    .scene {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-        background:
-            radial-gradient(circle at 20% 20%, rgba(255,255,255,0.05), transparent 25%),
-            radial-gradient(circle at 80% 70%, rgba(255,255,255,0.04), transparent 20%),
-            linear-gradient(to bottom, #5d8c3b 0%, #3d5f28 100%);
+    .label {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      color: white;
+      background: rgba(0,0,0,0.4);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      backdrop-filter: blur(5px);
     }
-
-    /* Mountains */
-    .mountains {
-        position: absolute;
-        width: 100%;
-        height: 35%;
-        bottom: 45%;
-        background:
-            polygon(0 100%, 10% 40%, 20% 100%, 30% 30%, 45% 100%, 55% 45%, 70% 100%, 82% 35%, 100% 100%);
-        clip-path: polygon(
-            0 100%,
-            10% 40%,
-            20% 100%,
-            30% 30%,
-            45% 100%,
-            55% 45%,
-            70% 100%,
-            82% 35%,
-            100% 100%
-        );
-        background-color: #2c2c2c;
-        opacity: 0.8;
-    }
-
-    /* Rally Track */
-    .track {
-        position: absolute;
-        width: 140%;
-        height: 300px;
-        background: #6e5b4d;
-        border-radius: 50%;
-        left: -20%;
-        bottom: -80px;
-        transform: rotate(-5deg);
-        box-shadow:
-            inset 0 0 0 12px #4f4035,
-            inset 0 0 0 28px #7f6c5b;
-    }
-
-    /* Dust texture */
-    .track::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background-image:
-            radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
-        background-size: 20px 20px;
-        opacity: 0.5;
-        border-radius: inherit;
-    }
-
-    /* Track lane */
-    .lane {
-        position: absolute;
-        inset: 40px;
-        border: 4px dashed rgba(255,255,255,0.4);
-        border-radius: 50%;
-    }
-
-    /* Cars */
-    .car {
-        position: absolute;
-        width: 90px;
-        height: 45px;
-        border-radius: 12px;
-        transform-origin: center center;
-        animation: drive 12s linear infinite;
-        transition: animation-duration 0.5s ease;
-        z-index: 10;
-    }
-
-    .car::before {
-        content: "";
-        position: absolute;
-        width: 70px;
-        height: 25px;
-        background: rgba(255,255,255,0.15);
-        left: 10px;
-        top: 5px;
-        border-radius: 8px;
-    }
-
-    .car::after {
-        content: "";
-        position: absolute;
-        width: 100%;
-        height: 10px;
-        bottom: -8px;
-        left: 0;
-        background: radial-gradient(rgba(255,255,255,0.25), transparent 70%);
-        filter: blur(8px);
-        opacity: 0.6;
-    }
-
-    .wheel {
-        position: absolute;
-        width: 18px;
-        height: 18px;
-        background: #111;
-        border-radius: 50%;
-        bottom: -6px;
-        border: 3px solid #444;
-    }
-
-    .wheel.front {
-        right: 10px;
-    }
-
-    .wheel.back {
-        left: 10px;
-    }
-
-    .car.red {
-        background: linear-gradient(135deg, #ff4747, #a60000);
-        animation-delay: 0s;
-    }
-
-    .car.blue {
-        background: linear-gradient(135deg, #4fa3ff, #003f91);
-        animation-delay: -4s;
-    }
-
-    .car.yellow {
-        background: linear-gradient(135deg, #ffd84d, #b17d00);
-        animation-delay: -8s;
-    }
-
-    /* Hover = turbo mode */
-    .scene:hover .car {
-        animation-duration: 3s;
-    }
-
-    /* Speed lines */
-    .speed-lines {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-
-    .scene:hover .speed-lines {
-        opacity: 1;
-    }
-
-    .line {
-        position: absolute;
-        width: 120px;
-        height: 2px;
-        background: rgba(255,255,255,0.4);
-        animation: streak 0.4s linear infinite;
-    }
-
-    @keyframes streak {
-        from {
-            transform: translateX(100vw);
-            opacity: 0;
-        }
-        30% {
-            opacity: 1;
-        }
-        to {
-            transform: translateX(-200px);
-            opacity: 0;
-        }
-    }
-
-    @keyframes drive {
-        0% {
-            transform:
-                rotate(0deg)
-                translateX(420px)
-                rotate(90deg);
-        }
-        100% {
-            transform:
-                rotate(360deg)
-                translateX(420px)
-                rotate(450deg);
-        }
-    }
-
-    /* Center point for circular driving */
-    .orbit {
-        position: absolute;
-        width: 0;
-        height: 0;
-        left: 50%;
-        top: 62%;
-    }
-
-    .title {
-        position: absolute;
-        top: 30px;
-        width: 100%;
-        text-align: center;
-        color: white;
-        font-size: 2.5rem;
-        font-weight: bold;
-        letter-spacing: 4px;
-        text-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        z-index: 20;
-    }
-
-    .subtitle {
-        position: absolute;
-        top: 80px;
-        width: 100%;
-        text-align: center;
-        color: rgba(255,255,255,0.8);
-        font-size: 1rem;
-        letter-spacing: 2px;
-        z-index: 20;
-    }
-</style>
+  </style>
 </head>
-
 <body>
 
-<div class="scene">
-
-    <div class="title">RALLY CIRCUIT</div>
-    <div class="subtitle">Hover to accelerate the race</div>
-
-    <div class="mountains"></div>
-
-    <div class="track">
-        <div class="lane"></div>
-    </div>
-
-    <div class="orbit">
-        <div class="car red">
-            <div class="wheel front"></div>
-            <div class="wheel back"></div>
-        </div>
-
-        <div class="car blue">
-            <div class="wheel front"></div>
-            <div class="wheel back"></div>
-        </div>
-
-        <div class="car yellow">
-            <div class="wheel front"></div>
-            <div class="wheel back"></div>
-        </div>
-    </div>
-
-    <div class="speed-lines">
-        <div class="line" style="top:20%; animation-delay:0s;"></div>
-        <div class="line" style="top:35%; animation-delay:0.1s;"></div>
-        <div class="line" style="top:50%; animation-delay:0.2s;"></div>
-        <div class="line" style="top:65%; animation-delay:0.15s;"></div>
-        <div class="line" style="top:80%; animation-delay:0.05s;"></div>
-    </div>
-
+<div class="label">
+  Hover over a rally car to trigger fireworks 🎆
 </div>
 
+<canvas id="scene"></canvas>
+
 <script>
-    // Optional extra realism:
-    // Tiny camera shake during turbo hover
+const canvas = document.getElementById('scene');
+const ctx = canvas.getContext('2d');
 
-    const scene = document.querySelector('.scene');
+let w, h, centerX, centerY;
 
-    let shakeInterval;
+function resize() {
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+  centerX = w / 2;
+  centerY = h / 2;
+}
+window.addEventListener('resize', resize);
+resize();
 
-    scene.addEventListener('mouseenter', () => {
-        shakeInterval = setInterval(() => {
-            const x = (Math.random() - 0.5) * 4;
-            const y = (Math.random() - 0.5) * 4;
+// =========================
+// TRACK
+// =========================
+const trackRadius = 230;
+const trackWidth = 90;
 
-            scene.style.transform = `translate(${x}px, ${y}px)`;
-        }, 40);
+// =========================
+// CARS
+// =========================
+const cars = [
+  { angle: 0, color: '#ff3b30', fireworks: false },
+  { angle: Math.PI / 2, color: '#34c759', fireworks: false },
+  { angle: Math.PI, color: '#007aff', fireworks: false },
+  { angle: Math.PI * 1.5, color: '#ffcc00', fireworks: false }
+];
+
+const carSize = 18;
+
+// =========================
+// FIREWORKS
+// =========================
+const particles = [];
+
+function createExplosion(x, y) {
+  for (let i = 0; i < 40; i++) {
+    particles.push({
+      x,
+      y,
+      vx: (Math.random() - 0.5) * 8,
+      vy: (Math.random() - 0.5) * 8,
+      life: 100,
+      color: `hsl(${Math.random() * 360},100%,60%)`
     });
+  }
+}
 
-    scene.addEventListener('mouseleave', () => {
-        clearInterval(shakeInterval);
-        scene.style.transform = 'translate(0,0)';
-    });
+// =========================
+// MOUSE
+// =========================
+const mouse = { x: 0, y: 0 };
+
+canvas.addEventListener('mousemove', (e) => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+// =========================
+// DRAW TRACK
+// =========================
+function drawTrack() {
+  // Outer track
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, trackRadius + trackWidth / 2, 0, Math.PI * 2);
+  ctx.fillStyle = '#555';
+  ctx.fill();
+
+  // Inner grass
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, trackRadius - trackWidth / 2, 0, Math.PI * 2);
+  ctx.fillStyle = '#1b5e20';
+  ctx.fill();
+
+  // Dashed center line
+  ctx.beginPath();
+  ctx.setLineDash([12, 12]);
+  ctx.arc(centerX, centerY, trackRadius, 0, Math.PI * 2);
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// =========================
+// DRAW CARS
+// =========================
+function drawCars() {
+  cars.forEach(car => {
+
+    // Animate movement
+    car.angle += 0.003;
+
+    const x = centerX + Math.cos(car.angle) * trackRadius;
+    const y = centerY + Math.sin(car.angle) * trackRadius;
+
+    car.x = x;
+    car.y = y;
+
+    // Hover detection
+    const dx = mouse.x - x;
+    const dy = mouse.y - y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    car.fireworks = dist < 22;
+
+    // Car body
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(car.angle + Math.PI / 2);
+
+    ctx.fillStyle = car.color;
+    ctx.fillRect(-10, -18, 20, 36);
+
+    // windshield
+    ctx.fillStyle = '#cfe8ff';
+    ctx.fillRect(-7, -10, 14, 12);
+
+    // wheels
+    ctx.fillStyle = '#111';
+    ctx.fillRect(-13, -14, 4, 8);
+    ctx.fillRect(9, -14, 4, 8);
+    ctx.fillRect(-13, 6, 4, 8);
+    ctx.fillRect(9, 6, 4, 8);
+
+    ctx.restore();
+
+    // Fireworks trigger
+    if (car.fireworks && Math.random() < 0.4) {
+      createExplosion(x, y);
+    }
+  });
+}
+
+// =========================
+// DRAW PARTICLES
+// =========================
+function drawParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+
+    p.x += p.vx;
+    p.y += p.vy;
+
+    p.vx *= 0.98;
+    p.vy *= 0.98;
+
+    p.life--;
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.life / 100;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+    }
+  }
+}
+
+// =========================
+// BACKGROUND
+// =========================
+function drawBackground() {
+  const gradient = ctx.createRadialGradient(
+    centerX,
+    centerY,
+    100,
+    centerX,
+    centerY,
+    w
+  );
+
+  gradient.addColorStop(0, '#222');
+  gradient.addColorStop(1, '#000');
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, w, h);
+}
+
+// =========================
+// MAIN LOOP
+// =========================
+function animate() {
+  requestAnimationFrame(animate);
+
+  drawBackground();
+  drawTrack();
+  drawCars();
+  drawParticles();
+}
+
+animate();
 </script>
 
 </body>
