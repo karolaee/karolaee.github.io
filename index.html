@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Rally Racing Sky Birds</title>
+<title>Sunrise Rally Racing</title>
 
 <style>
     html, body {
         margin: 0;
         overflow: hidden;
-        background: #87ceeb;
+        background: #000;
         font-family: Arial, sans-serif;
     }
 
@@ -34,8 +34,9 @@
 <body>
 
 <div class="info">
-    Hover over cars for fireworks 🎆<br>
-    Move mouse in the sky for birds 🕊️
+    Sunrise Rally Racing 🌅<br>
+    Hover cars for fireworks 🎆<br>
+    Move mouse in sky for birds 🕊️
 </div>
 
 <canvas id="canvas"></canvas>
@@ -67,27 +68,15 @@ const trackWidth = 120;
 // CARS
 // =====================================================
 const cars = [
-    {
-        angle: 0,
-        color: "#ff3b30"
-    },
-    {
-        angle: Math.PI / 2,
-        color: "#34c759"
-    },
-    {
-        angle: Math.PI,
-        color: "#007aff"
-    },
-    {
-        angle: Math.PI * 1.5,
-        color: "#ffcc00"
-    }
+    { angle: 0, color: "#ff3b30" },
+    { angle: Math.PI / 2, color: "#34c759" },
+    { angle: Math.PI, color: "#007aff" },
+    { angle: Math.PI * 1.5, color: "#ffcc00" }
 ];
 
 
 // =====================================================
-// PARTICLES
+// EFFECT ARRAYS
 // =====================================================
 const fireworks = [];
 const birds = [];
@@ -106,7 +95,7 @@ canvas.addEventListener("mousemove", e => {
     mouse.x = e.clientX;
     mouse.y = e.clientY;
 
-    // Check if mouse is outside track
+    // Outside track = sky area
     const dx = mouse.x - cx;
     const dy = mouse.y - cy;
 
@@ -115,7 +104,7 @@ canvas.addEventListener("mousemove", e => {
     const outsideTrack =
         distance > trackRadius + trackWidth / 2;
 
-    // Spawn birds only in sky area
+    // Spawn birds
     if (outsideTrack && Math.random() < 0.6) {
 
         birds.push({
@@ -235,10 +224,11 @@ function drawBirds() {
 
 
 // =====================================================
-// SKY BACKGROUND
+// SUNRISE SKY
 // =====================================================
 function drawSky() {
 
+    // Sunrise gradient
     const gradient = ctx.createLinearGradient(
         0,
         0,
@@ -246,28 +236,59 @@ function drawSky() {
         h
     );
 
-    gradient.addColorStop(0, "#7fd3ff");
-    gradient.addColorStop(1, "#dff6ff");
+    gradient.addColorStop(0, "#2d1b4e");
+    gradient.addColorStop(0.25, "#ff6b6b");
+    gradient.addColorStop(0.55, "#ffb86b");
+    gradient.addColorStop(1, "#ffe9b0");
 
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, w, h);
 
+    // Sun glow
+    const sunX = cx;
+    const sunY = h * 0.22;
+
+    const sunGlow = ctx.createRadialGradient(
+        sunX,
+        sunY,
+        20,
+        sunX,
+        sunY,
+        180
+    );
+
+    sunGlow.addColorStop(0, "rgba(255,255,220,1)");
+    sunGlow.addColorStop(0.25, "rgba(255,220,120,0.9)");
+    sunGlow.addColorStop(1, "rgba(255,180,0,0)");
+
+    ctx.fillStyle = sunGlow;
+
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 180, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Sun
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 55, 0, Math.PI * 2);
+    ctx.fillStyle = "#fff5c2";
+    ctx.fill();
+
     // Clouds
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 7; i++) {
 
         const x =
-            (i * 280 + Date.now() * 0.01) %
-            (w + 300) - 150;
+            (i * 260 + Date.now() * 0.015) %
+            (w + 400) - 200;
 
-        const y = 80 + i * 60;
+        const y = 70 + i * 55;
 
-        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.fillStyle = "rgba(255,220,220,0.42)";
 
         ctx.beginPath();
 
-        ctx.arc(x, y, 35, 0, Math.PI * 2);
-        ctx.arc(x + 35, y + 10, 30, 0, Math.PI * 2);
-        ctx.arc(x - 35, y + 10, 28, 0, Math.PI * 2);
+        ctx.arc(x, y, 38, 0, Math.PI * 2);
+        ctx.arc(x + 40, y + 10, 32, 0, Math.PI * 2);
+        ctx.arc(x - 40, y + 10, 30, 0, Math.PI * 2);
 
         ctx.fill();
     }
@@ -293,7 +314,7 @@ function drawTrack() {
     ctx.fillStyle = "#555";
     ctx.fill();
 
-    // Inner grass
+    // Grass center
     ctx.beginPath();
 
     ctx.arc(
@@ -304,10 +325,10 @@ function drawTrack() {
         Math.PI * 2
     );
 
-    ctx.fillStyle = "#27a327";
+    ctx.fillStyle = "#2ea043";
     ctx.fill();
 
-    // Racing dashed line
+    // Racing line
     ctx.beginPath();
 
     ctx.setLineDash([16, 14]);
@@ -329,13 +350,12 @@ function drawTrack() {
 
 
 // =====================================================
-// DRAW CARS
+// CARS
 // =====================================================
 function drawCars() {
 
     cars.forEach(car => {
 
-        // Move around track
         car.angle += 0.004;
 
         const x =
@@ -344,7 +364,7 @@ function drawCars() {
         const y =
             cy + Math.sin(car.angle) * trackRadius;
 
-        // Rotate in driving direction
+        // Driving direction
         const rotation =
             car.angle + Math.PI / 2;
 
@@ -364,7 +384,7 @@ function drawCars() {
         ctx.translate(x, y);
         ctx.rotate(rotation);
 
-        // Car shadow
+        // Shadow
         ctx.fillStyle = "rgba(0,0,0,0.25)";
         ctx.fillRect(-14, -28, 28, 56);
 
@@ -376,7 +396,7 @@ function drawCars() {
         ctx.fillStyle = "#dff3ff";
         ctx.fillRect(-8, -8, 16, 18);
 
-        // Hood shine
+        // Hood reflection
         ctx.fillStyle = "rgba(255,255,255,0.18)";
         ctx.fillRect(-8, -22, 16, 10);
 
@@ -390,7 +410,7 @@ function drawCars() {
         ctx.fillRect(11, 8, 5, 12);
 
         // Headlights
-        ctx.fillStyle = "#fff6a0";
+        ctx.fillStyle = "#fff4aa";
 
         ctx.fillRect(-7, -28, 5, 4);
         ctx.fillRect(2, -28, 5, 4);
@@ -407,7 +427,7 @@ function drawCars() {
 
 
 // =====================================================
-// MAIN LOOP
+// ANIMATION LOOP
 // =====================================================
 function animate() {
 
