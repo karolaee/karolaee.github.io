@@ -1,356 +1,394 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-<title>Interactive TV Widget</title>
-
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        user-select: none;
-    }
-
-    html, body {
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        font-family: Arial, sans-serif;
-    }
-
-    body {
-        background: url('wallpaper.jpg') center center / cover no-repeat;
-    }
-
-    /* ===== TV WIDGET ===== */
-
-    #tv-widget {
-        position: absolute;
-        width: 520px;
-        height: 390px;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        cursor: grab;
-        z-index: 10;
-    }
-
-    #tv-widget:active {
-        cursor: grabbing;
-    }
-
-    /* TV image */
-    #tv-frame {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        pointer-events: none;
-        z-index: 3;
-    }
-
-    /* Video/audio area */
-    #media-container {
-        position: absolute;
-
-        /* ADJUST THESE VALUES TO FIT YOUR TV SCREEN */
-        left: 80px;
-        top: 70px;
-        width: 360px;
-        height: 200px;
-
-        background: black;
-        overflow: hidden;
-        border-radius: 8px;
-        z-index: 1;
-    }
-
-    /* Fake CRT effect */
-    #media-container::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background:
-            repeating-linear-gradient(
-                to bottom,
-                rgba(255,255,255,0.03),
-                rgba(255,255,255,0.03) 1px,
-                transparent 1px,
-                transparent 3px
-            );
-        pointer-events: none;
-        mix-blend-mode: screen;
-    }
-
-    /* Visualizer */
-    #visualizer {
-        width: 100%;
-        height: 100%;
-        background:
-            radial-gradient(circle at center, #00ff99 0%, #001a11 70%);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .bar {
-        position: absolute;
-        bottom: 0;
-        width: 8px;
-        background: #00ff99;
-        border-radius: 4px 4px 0 0;
-        animation: bounce 1s infinite ease-in-out;
-    }
-
-    @keyframes bounce {
-        0% { height: 20%; }
-        50% { height: 100%; }
-        100% { height: 20%; }
-    }
-
-    /* PLAYER BUTTON AREA */
-    #player-controls {
-        position: absolute;
-
-        /* POSITION THIS OVER YOUR SVG BUTTONS */
-        left: 180px;
-        top: 285px;
-        width: 160px;
-        height: 60px;
-
-        z-index: 5;
-    }
-
-    #player-schema {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        pointer-events: none;
-    }
-
-    /* Invisible click zone */
-    #play-button {
-        position: absolute;
-
-        /* BUTTON HITBOX */
-        left: 45px;
-        top: 8px;
-        width: 70px;
-        height: 40px;
-
-        cursor: pointer;
-        border-radius: 10px;
-        transition: all 0.2s ease;
-    }
-
-    #play-button:hover {
-        background: rgba(255,255,255,0.15);
-        box-shadow: 0 0 15px rgba(255,255,255,0.5);
-    }
-
-    /* Status text */
-    #status {
-        position: absolute;
-        bottom: -30px;
-        width: 100%;
-        text-align: center;
-        color: white;
-        font-size: 14px;
-        text-shadow: 0 0 10px black;
-    }
-
-    /* Responsive */
-    @media (max-width: 700px) {
-        #tv-widget {
-            width: 90vw;
-            height: 67vw;
-        }
-    }
-</style>
-</head>
-
-<body>
-
-<div id="tv-widget">
-
-    <!-- MEDIA AREA -->
-    <div id="media-container">
-        <div id="visualizer"></div>
-    </div>
-
-    <!-- TV FRAME -->
-    <img id="tv-frame" src="mctv.png" alt="TV Frame">
-
-    <!-- PLAYER -->
-    <div id="player-controls">
-
-        <img id="player-schema" src="player_schema.svg" alt="Player Controls">
-
-        <div id="play-button"></div>
-
-    </div>
-
-    <div id="status">PAUSED</div>
-
-</div>
-
-<!-- AUDIO -->
-<audio id="audio-player" loop>
-    <source src="video.mp3" type="audio/mpeg">
-</audio>
-
-<script>
-/* =========================================
-   AUDIO PLAYER
-========================================= */
-
-const audio = document.getElementById('audio-player');
-const playButton = document.getElementById('play-button');
-const statusText = document.getElementById('status');
-
-let isPlaying = false;
-
-playButton.addEventListener('click', () => {
-
-    if (!isPlaying) {
-        audio.play();
-
-        statusText.innerText = 'PLAYING';
-
-        startVisualizer();
-
-    } else {
-        audio.pause();
-
-        statusText.innerText = 'PAUSED';
-
-        stopVisualizer();
-    }
-
-    isPlaying = !isPlaying;
-});
-
-/* =========================================
-   VISUALIZER
-========================================= */
-
-const visualizer = document.getElementById('visualizer');
-
-let bars = [];
-
-function createBars() {
-
-    visualizer.innerHTML = '';
-    bars = [];
-
-    const count = 32;
-
-    for (let i = 0; i < count; i++) {
-
-        const bar = document.createElement('div');
-
-        bar.classList.add('bar');
-
-        bar.style.left = `${i * 12}px`;
-
-        bar.style.height = `${20 + Math.random() * 80}%`;
-
-        bar.style.animationDelay = `${Math.random()}s`;
-
-        bar.style.opacity = 0.5 + Math.random() * 0.5;
-
-        visualizer.appendChild(bar);
-
-        bars.push(bar);
-    }
-}
-
-function startVisualizer() {
-
-    createBars();
-
-    bars.forEach(bar => {
-        bar.style.animationPlayState = 'running';
-    });
-}
-
-function stopVisualizer() {
-
-    bars.forEach(bar => {
-        bar.style.animationPlayState = 'paused';
-    });
-}
-
-createBars();
-stopVisualizer();
-
-/* =========================================
-   DRAGGABLE TV
-========================================= */
-
-const tvWidget = document.getElementById('tv-widget');
-
-let offsetX = 0;
-let offsetY = 0;
-let isDragging = false;
-
-tvWidget.addEventListener('mousedown', (e) => {
-
-    isDragging = true;
-
-    offsetX = e.clientX - tvWidget.offsetLeft;
-    offsetY = e.clientY - tvWidget.offsetTop;
-
-    tvWidget.style.transform = 'none';
-});
-
-document.addEventListener('mousemove', (e) => {
-
-    if (!isDragging) return;
-
-    tvWidget.style.left = `${e.clientX - offsetX}px`;
-    tvWidget.style.top = `${e.clientY - offsetY}px`;
-});
-
-document.addEventListener('mouseup', () => {
-    isDragging = false;
-});
-
-/* =========================================
-   TOUCH SUPPORT
-========================================= */
-
-tvWidget.addEventListener('touchstart', (e) => {
-
-    isDragging = true;
-
-    const touch = e.touches[0];
-
-    offsetX = touch.clientX - tvWidget.offsetLeft;
-    offsetY = touch.clientY - tvWidget.offsetTop;
-
-    tvWidget.style.transform = 'none';
-
-}, { passive: true });
-
-document.addEventListener('touchmove', (e) => {
-
-    if (!isDragging) return;
-
-    const touch = e.touches[0];
-
-    tvWidget.style.left = `${touch.clientX - offsetX}px`;
-    tvWidget.style.top = `${touch.clientY - offsetY}px`;
-
-}, { passive: true });
-
-document.addEventListener('touchend', () => {
-    isDragging = false;
-});
-
-</script>
-
-</body>
-</html>
+<!DOCTYPE html>				
+<html lang="en">				
+<head>				
+<meta charset="UTF-8">				
+<meta name="viewport" content="width=device-width, initial-scale=1.0">				
+				
+<title>Interactive TV Widget</title>				
+				
+<style>				
+				
+*{				
+margin:0;				
+padding:0;				
+box-sizing:border-box;				
+}				
+				
+html,body{				
+width:100%;				
+height:100%;				
+overflow:hidden;				
+background:url("wallpaper.jpg") center center / cover no-repeat;				
+font-family:Arial, sans-serif;				
+}				
+				
+/* ===================================				
+TV WIDGET				
+#ERROR!				
+				
+#tv-widget{				
+position:absolute;				
+width:700px;				
+height:700px;				
+				
+left:50%;				
+top:50%;				
+				
+transform:translate(-50%, -50%);				
+				
+cursor:grab;				
+				
+touch-action:none;				
+				
+user-select:none;				
+}				
+				
+#tv-widget.dragging{				
+cursor:grabbing;				
+}				
+				
+/* ===================================				
+PNG TV SKIN				
+#ERROR!				
+				
+#tv-skin{				
+position:absolute;				
+inset:0;				
+				
+width:100%;				
+height:100%;				
+				
+object-fit:contain;				
+				
+pointer-events:none;				
+				
+z-index:5;				
+}				
+				
+/* ===================================				
+SVG INTERACTION LAYER				
+#ERROR!				
+				
+#svg-overlay{				
+position:absolute;				
+inset:0;				
+				
+width:100%;				
+height:100%;				
+				
+z-index:10;				
+				
+opacity:0;				
+				
+pointer-events:auto;				
+}				
+				
+/* ===================================				
+VIDEO AREA				
+#ERROR!				
+				
+#video-container{				
+position:absolute;				
+				
+overflow:hidden;				
+				
+background:black;				
+				
+z-index:1;				
+				
+border-radius:12px;				
+				
+box-shadow:				
+inset 0 0 30px rgba(0,0,0,0.8),				
+0 0 30px rgba(0,0,0,0.5);				
+}				
+				
+#video{				
+width:100%;				
+height:100%;				
+				
+object-fit:cover;				
+				
+background:black;				
+}				
+				
+/* CRT EFFECT */				
+				
+#video-container::after{				
+content:"";				
+				
+position:absolute;				
+inset:0;				
+				
+background:				
+repeating-linear-gradient(				
+to bottom,				
+rgba(255,255,255,0.03),				
+rgba(255,255,255,0.03) 1px,				
+transparent 1px,				
+transparent 3px				
+);				
+				
+pointer-events:none;				
+}				
+				
+/* ===================================				
+STATUS TEXT				
+#ERROR!				
+				
+#status{				
+position:absolute;				
+				
+bottom:-40px;				
+				
+width:100%;				
+				
+text-align:center;				
+				
+color:white;				
+				
+font-size:16px;				
+				
+letter-spacing:2px;				
+				
+text-shadow:0 0 10px black;				
+}				
+				
+/* ===================================				
+MOBILE				
+#ERROR!				
+				
+@media (max-width:768px){				
+				
+#tv-widget{				
+width:95vw;				
+height:95vw;				
+}				
+				
+}				
+				
+</style>				
+</head>				
+				
+<body>				
+				
+<div id="tv-widget">				
+				
+<!-- VIDEO -->				
+<div id="video-container">				
+<video id="video" loop playsinline>				
+<source src="video.mp4" type="video/mp4">				
+</video>				
+</div>				
+				
+<!-- PNG TV -->				
+<img id="tv-skin" src="mctv.png">				
+				
+<!-- SVG OVERLAY -->				
+<object				
+id="svg-overlay"				
+type="image/svg+xml"				
+data="player_schema.svg">				
+</object>				
+				
+<div id="status">				
+PAUSED				
+</div>				
+				
+</div>				
+				
+<script>				
+				
+/* ===================================				
+ELEMENTS				
+#ERROR!				
+				
+const widget = document.getElementById("tv-widget");				
+const svgObject = document.getElementById("svg-overlay");				
+const video = document.getElementById("video");				
+const videoContainer = document.getElementById("video-container");				
+const statusText = document.getElementById("status");				
+				
+let isPlaying = false;				
+				
+/* ===================================				
+DRAGGING				
+#ERROR!				
+				
+let dragging = false;				
+let offsetX = 0;				
+let offsetY = 0;				
+				
+function startDrag(x,y){				
+				
+dragging = true;				
+				
+widget.classList.add("dragging");				
+				
+widget.style.transform = "none";				
+				
+offsetX = x - widget.offsetLeft;				
+offsetY = y - widget.offsetTop;				
+}				
+				
+function dragMove(x,y){				
+				
+if(!dragging) return;				
+				
+widget.style.left = (x - offsetX) + "px";				
+widget.style.top = (y - offsetY) + "px";				
+}				
+				
+function stopDrag(){				
+				
+dragging = false;				
+				
+widget.classList.remove("dragging");				
+}				
+				
+/* DESKTOP */				
+				
+widget.addEventListener("mousedown", e=>{				
+				
+if(e.target.closest(".svg-button")) return;				
+				
+startDrag(e.clientX, e.clientY);				
+});				
+				
+document.addEventListener("mousemove", e=>{				
+dragMove(e.clientX, e.clientY);				
+});				
+				
+document.addEventListener("mouseup", stopDrag);				
+				
+/* MOBILE */				
+				
+widget.addEventListener("touchstart", e=>{				
+				
+const t = e.touches[0];				
+				
+startDrag(t.clientX, t.clientY);				
+				
+},{passive:true});				
+				
+document.addEventListener("touchmove", e=>{				
+				
+const t = e.touches[0];				
+				
+dragMove(t.clientX, t.clientY);				
+				
+},{passive:true});				
+				
+document.addEventListener("touchend", stopDrag);				
+				
+/* ===================================				
+SVG LOADED				
+#ERROR!				
+				
+svgObject.addEventListener("load", ()=>{				
+				
+const svgDoc = svgObject.contentDocument;				
+				
+if(!svgDoc){				
+console.error("SVG failed to load");				
+return;				
+}				
+				
+/* ===================================				
+SVG ELEMENTS				
+#ERROR!				
+				
+const playBtn = svgDoc.getElementById("play");				
+const pauseBtn = svgDoc.getElementById("pause");				
+const screen = svgDoc.getElementById("screen");				
+				
+/* ===================================				
+VIDEO AREA FROM SVG				
+#ERROR!				
+				
+if(screen){				
+				
+const bbox = screen.getBBox();				
+				
+const svg = svgDoc.querySelector("svg");				
+				
+const vb = svg.viewBox.baseVal;				
+				
+const scaleX = widget.clientWidth / vb.width;				
+const scaleY = widget.clientHeight / vb.height;				
+				
+videoContainer.style.left = (bbox.x * scaleX) + "px";				
+videoContainer.style.top = (bbox.y * scaleY) + "px";				
+				
+videoContainer.style.width = (bbox.width * scaleX) + "px";				
+videoContainer.style.height = (bbox.height * scaleY) + "px";				
+}				
+				
+/* ===================================				
+BUTTONS				
+#ERROR!				
+				
+function makeInteractive(el){				
+				
+if(!el) return;				
+				
+el.style.pointerEvents = "all";				
+el.style.cursor = "pointer";				
+				
+el.classList.add("svg-button");				
+}				
+				
+makeInteractive(playBtn);				
+makeInteractive(pauseBtn);				
+				
+/* ===================================				
+PLAY				
+#ERROR!				
+				
+if(playBtn){				
+				
+playBtn.addEventListener("click", ()=>{				
+				
+video.play();				
+				
+isPlaying = true;				
+				
+statusText.innerText = "PLAYING";				
+});				
+}				
+				
+/* ===================================				
+PAUSE				
+#ERROR!				
+				
+if(pauseBtn){				
+				
+pauseBtn.addEventListener("click", ()=>{				
+				
+video.pause();				
+				
+isPlaying = false;				
+				
+statusText.innerText = "PAUSED";				
+});				
+}				
+				
+/* ===================================				
+OPTIONAL BUTTON DEBUG				
+#ERROR!				
+				
+/*				
+Uncomment to visualize buttons				
+				
+playBtn.style.opacity = 0.3;				
+pauseBtn.style.opacity = 0.3;				
+screen.style.opacity = 0.2;				
+*/				
+				
+});				
+				
+</script>				
+				
+</body>				
+</html>				
+				
