@@ -2,450 +2,355 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Sunrise Rally Racing</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>Interactive TV Widget</title>
 
 <style>
-    html, body {
+    * {
         margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        user-select: none;
+    }
+
+    html, body {
+        width: 100%;
+        height: 100%;
         overflow: hidden;
-        background: #000;
         font-family: Arial, sans-serif;
     }
 
-    canvas {
-        display: block;
+    body {
+        background: url('wallpaper.jpg') center center / cover no-repeat;
     }
 
-    .info {
+    /* ===== TV WIDGET ===== */
+
+    #tv-widget {
         position: absolute;
-        top: 15px;
-        left: 15px;
-        color: white;
-        background: rgba(0,0,0,0.35);
-        padding: 12px 16px;
-        border-radius: 12px;
-        backdrop-filter: blur(6px);
-        font-size: 14px;
+        width: 520px;
+        height: 390px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        cursor: grab;
         z-index: 10;
+    }
+
+    #tv-widget:active {
+        cursor: grabbing;
+    }
+
+    /* TV image */
+    #tv-frame {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        pointer-events: none;
+        z-index: 3;
+    }
+
+    /* Video/audio area */
+    #media-container {
+        position: absolute;
+
+        /* ADJUST THESE VALUES TO FIT YOUR TV SCREEN */
+        left: 80px;
+        top: 70px;
+        width: 360px;
+        height: 200px;
+
+        background: black;
+        overflow: hidden;
+        border-radius: 8px;
+        z-index: 1;
+    }
+
+    /* Fake CRT effect */
+    #media-container::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            repeating-linear-gradient(
+                to bottom,
+                rgba(255,255,255,0.03),
+                rgba(255,255,255,0.03) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+        pointer-events: none;
+        mix-blend-mode: screen;
+    }
+
+    /* Visualizer */
+    #visualizer {
+        width: 100%;
+        height: 100%;
+        background:
+            radial-gradient(circle at center, #00ff99 0%, #001a11 70%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .bar {
+        position: absolute;
+        bottom: 0;
+        width: 8px;
+        background: #00ff99;
+        border-radius: 4px 4px 0 0;
+        animation: bounce 1s infinite ease-in-out;
+    }
+
+    @keyframes bounce {
+        0% { height: 20%; }
+        50% { height: 100%; }
+        100% { height: 20%; }
+    }
+
+    /* PLAYER BUTTON AREA */
+    #player-controls {
+        position: absolute;
+
+        /* POSITION THIS OVER YOUR SVG BUTTONS */
+        left: 180px;
+        top: 285px;
+        width: 160px;
+        height: 60px;
+
+        z-index: 5;
+    }
+
+    #player-schema {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        pointer-events: none;
+    }
+
+    /* Invisible click zone */
+    #play-button {
+        position: absolute;
+
+        /* BUTTON HITBOX */
+        left: 45px;
+        top: 8px;
+        width: 70px;
+        height: 40px;
+
+        cursor: pointer;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+
+    #play-button:hover {
+        background: rgba(255,255,255,0.15);
+        box-shadow: 0 0 15px rgba(255,255,255,0.5);
+    }
+
+    /* Status text */
+    #status {
+        position: absolute;
+        bottom: -30px;
+        width: 100%;
+        text-align: center;
+        color: white;
+        font-size: 14px;
+        text-shadow: 0 0 10px black;
+    }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+        #tv-widget {
+            width: 90vw;
+            height: 67vw;
+        }
     }
 </style>
 </head>
+
 <body>
 
-<div class="info">
-    Sunrise Rally Racing 🌅<br>
-    Hover cars for fireworks 🎆<br>
-    Move mouse in sky for birds 🕊️
+<div id="tv-widget">
+
+    <!-- MEDIA AREA -->
+    <div id="media-container">
+        <div id="visualizer"></div>
+    </div>
+
+    <!-- TV FRAME -->
+    <img id="tv-frame" src="mctv.png" alt="TV Frame">
+
+    <!-- PLAYER -->
+    <div id="player-controls">
+
+        <img id="player-schema" src="player_schema.svg" alt="Player Controls">
+
+        <div id="play-button"></div>
+
+    </div>
+
+    <div id="status">PAUSED</div>
+
 </div>
 
-<canvas id="canvas"></canvas>
+<!-- AUDIO -->
+<audio id="audio-player" loop>
+    <source src="video.mp3" type="audio/mpeg">
+</audio>
 
 <script>
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+/* =========================================
+   AUDIO PLAYER
+========================================= */
 
-let w, h, cx, cy;
+const audio = document.getElementById('audio-player');
+const playButton = document.getElementById('play-button');
+const statusText = document.getElementById('status');
 
-function resize() {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-    cx = w / 2;
-    cy = h / 2;
-}
-window.addEventListener("resize", resize);
-resize();
+let isPlaying = false;
 
+playButton.addEventListener('click', () => {
 
-// =====================================================
-// TRACK SETTINGS
-// =====================================================
-const trackRadius = 340;
-const trackWidth = 120;
+    if (!isPlaying) {
+        audio.play();
 
+        statusText.innerText = 'PLAYING';
 
-// =====================================================
-// CARS
-// =====================================================
-const cars = [
-    { angle: 0, color: "#ff3b30" },
-    { angle: Math.PI / 2, color: "#34c759" },
-    { angle: Math.PI, color: "#007aff" },
-    { angle: Math.PI * 1.5, color: "#ffcc00" }
-];
+        startVisualizer();
 
+    } else {
+        audio.pause();
 
-// =====================================================
-// EFFECT ARRAYS
-// =====================================================
-const fireworks = [];
-const birds = [];
+        statusText.innerText = 'PAUSED';
 
-
-// =====================================================
-// MOUSE
-// =====================================================
-const mouse = {
-    x: 0,
-    y: 0
-};
-
-canvas.addEventListener("mousemove", e => {
-
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-
-    // Outside track = sky area
-    const dx = mouse.x - cx;
-    const dy = mouse.y - cy;
-
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    const outsideTrack =
-        distance > trackRadius + trackWidth / 2;
-
-    // Spawn birds
-    if (outsideTrack && Math.random() < 0.6) {
-
-        birds.push({
-            x: mouse.x,
-            y: mouse.y,
-            vx: (Math.random() - 0.5) * 4,
-            vy: -Math.random() * 2 - 1,
-            size: Math.random() * 8 + 8,
-            flap: Math.random() * Math.PI * 2,
-            life: 220
-        });
+        stopVisualizer();
     }
+
+    isPlaying = !isPlaying;
 });
 
+/* =========================================
+   VISUALIZER
+========================================= */
 
-// =====================================================
-// FIREWORKS
-// =====================================================
-function createExplosion(x, y) {
+const visualizer = document.getElementById('visualizer');
 
-    for (let i = 0; i < 45; i++) {
+let bars = [];
 
-        fireworks.push({
-            x,
-            y,
-            vx: (Math.random() - 0.5) * 10,
-            vy: (Math.random() - 0.5) * 10,
-            size: Math.random() * 4 + 2,
-            color: `hsl(${Math.random() * 360},100%,60%)`,
-            life: 100
-        });
+function createBars() {
+
+    visualizer.innerHTML = '';
+    bars = [];
+
+    const count = 32;
+
+    for (let i = 0; i < count; i++) {
+
+        const bar = document.createElement('div');
+
+        bar.classList.add('bar');
+
+        bar.style.left = `${i * 12}px`;
+
+        bar.style.height = `${20 + Math.random() * 80}%`;
+
+        bar.style.animationDelay = `${Math.random()}s`;
+
+        bar.style.opacity = 0.5 + Math.random() * 0.5;
+
+        visualizer.appendChild(bar);
+
+        bars.push(bar);
     }
 }
 
-function drawFireworks() {
+function startVisualizer() {
 
-    for (let i = fireworks.length - 1; i >= 0; i--) {
+    createBars();
 
-        const p = fireworks[i];
-
-        p.x += p.vx;
-        p.y += p.vy;
-
-        p.vx *= 0.97;
-        p.vy *= 0.97;
-
-        p.life--;
-
-        ctx.globalAlpha = p.life / 100;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.fill();
-
-        ctx.globalAlpha = 1;
-
-        if (p.life <= 0) {
-            fireworks.splice(i, 1);
-        }
-    }
-}
-
-
-// =====================================================
-// BIRDS
-// =====================================================
-function drawBirds() {
-
-    for (let i = birds.length - 1; i >= 0; i--) {
-
-        const b = birds[i];
-
-        b.x += b.vx;
-        b.y += b.vy;
-
-        b.life--;
-        b.flap += 0.25;
-
-        const wing = Math.sin(b.flap) * 6;
-
-        ctx.save();
-
-        ctx.translate(b.x, b.y);
-
-        ctx.strokeStyle = "rgba(0,0,0,0.75)";
-        ctx.lineWidth = 2;
-
-        ctx.beginPath();
-
-        // Left wing
-        ctx.moveTo(-b.size, 0);
-        ctx.quadraticCurveTo(
-            -b.size / 2,
-            -wing,
-            0,
-            0
-        );
-
-        // Right wing
-        ctx.quadraticCurveTo(
-            b.size / 2,
-            -wing,
-            b.size,
-            0
-        );
-
-        ctx.stroke();
-
-        ctx.restore();
-
-        if (b.life <= 0) {
-            birds.splice(i, 1);
-        }
-    }
-}
-
-
-// =====================================================
-// SUNRISE SKY
-// =====================================================
-function drawSky() {
-
-    // Sunrise gradient
-    const gradient = ctx.createLinearGradient(
-        0,
-        0,
-        0,
-        h
-    );
-
-    gradient.addColorStop(0, "#2d1b4e");
-    gradient.addColorStop(0.25, "#ff6b6b");
-    gradient.addColorStop(0.55, "#ffb86b");
-    gradient.addColorStop(1, "#ffe9b0");
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, w, h);
-
-    // Sun glow
-    const sunX = cx;
-    const sunY = h * 0.22;
-
-    const sunGlow = ctx.createRadialGradient(
-        sunX,
-        sunY,
-        20,
-        sunX,
-        sunY,
-        180
-    );
-
-    sunGlow.addColorStop(0, "rgba(255,255,220,1)");
-    sunGlow.addColorStop(0.25, "rgba(255,220,120,0.9)");
-    sunGlow.addColorStop(1, "rgba(255,180,0,0)");
-
-    ctx.fillStyle = sunGlow;
-
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, 180, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Sun
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, 55, 0, Math.PI * 2);
-    ctx.fillStyle = "#fff5c2";
-    ctx.fill();
-
-    // Clouds
-    for (let i = 0; i < 7; i++) {
-
-        const x =
-            (i * 260 + Date.now() * 0.015) %
-            (w + 400) - 200;
-
-        const y = 70 + i * 55;
-
-        ctx.fillStyle = "rgba(255,220,220,0.42)";
-
-        ctx.beginPath();
-
-        ctx.arc(x, y, 38, 0, Math.PI * 2);
-        ctx.arc(x + 40, y + 10, 32, 0, Math.PI * 2);
-        ctx.arc(x - 40, y + 10, 30, 0, Math.PI * 2);
-
-        ctx.fill();
-    }
-}
-
-
-// =====================================================
-// TRACK
-// =====================================================
-function drawTrack() {
-
-    // Asphalt
-    ctx.beginPath();
-
-    ctx.arc(
-        cx,
-        cy,
-        trackRadius + trackWidth / 2,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fillStyle = "#555";
-    ctx.fill();
-
-    // Grass center
-    ctx.beginPath();
-
-    ctx.arc(
-        cx,
-        cy,
-        trackRadius - trackWidth / 2,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fillStyle = "#2ea043";
-    ctx.fill();
-
-    // Racing line
-    ctx.beginPath();
-
-    ctx.setLineDash([16, 14]);
-
-    ctx.arc(
-        cx,
-        cy,
-        trackRadius,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 4;
-    ctx.stroke();
-
-    ctx.setLineDash([]);
-}
-
-
-// =====================================================
-// CARS
-// =====================================================
-function drawCars() {
-
-    cars.forEach(car => {
-
-        car.angle += 0.004;
-
-        const x =
-            cx + Math.cos(car.angle) * trackRadius;
-
-        const y =
-            cy + Math.sin(car.angle) * trackRadius;
-
-        // Driving direction
-        const rotation =
-            car.angle + Math.PI / 2;
-
-        // Hover detection
-        const dx = mouse.x - x;
-        const dy = mouse.y - y;
-
-        const dist =
-            Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < 28 && Math.random() < 0.45) {
-            createExplosion(x, y);
-        }
-
-        ctx.save();
-
-        ctx.translate(x, y);
-        ctx.rotate(rotation);
-
-        // Shadow
-        ctx.fillStyle = "rgba(0,0,0,0.25)";
-        ctx.fillRect(-14, -28, 28, 56);
-
-        // Car body
-        ctx.fillStyle = car.color;
-        ctx.fillRect(-12, -26, 24, 52);
-
-        // Windshield
-        ctx.fillStyle = "#dff3ff";
-        ctx.fillRect(-8, -8, 16, 18);
-
-        // Hood reflection
-        ctx.fillStyle = "rgba(255,255,255,0.18)";
-        ctx.fillRect(-8, -22, 16, 10);
-
-        // Wheels
-        ctx.fillStyle = "#111";
-
-        ctx.fillRect(-16, -20, 5, 12);
-        ctx.fillRect(11, -20, 5, 12);
-
-        ctx.fillRect(-16, 8, 5, 12);
-        ctx.fillRect(11, 8, 5, 12);
-
-        // Headlights
-        ctx.fillStyle = "#fff4aa";
-
-        ctx.fillRect(-7, -28, 5, 4);
-        ctx.fillRect(2, -28, 5, 4);
-
-        // Rear lights
-        ctx.fillStyle = "#ff4444";
-
-        ctx.fillRect(-7, 24, 5, 4);
-        ctx.fillRect(2, 24, 5, 4);
-
-        ctx.restore();
+    bars.forEach(bar => {
+        bar.style.animationPlayState = 'running';
     });
 }
 
+function stopVisualizer() {
 
-// =====================================================
-// ANIMATION LOOP
-// =====================================================
-function animate() {
-
-    requestAnimationFrame(animate);
-
-    drawSky();
-
-    drawBirds();
-
-    drawTrack();
-
-    drawCars();
-
-    drawFireworks();
+    bars.forEach(bar => {
+        bar.style.animationPlayState = 'paused';
+    });
 }
 
-animate();
+createBars();
+stopVisualizer();
+
+/* =========================================
+   DRAGGABLE TV
+========================================= */
+
+const tvWidget = document.getElementById('tv-widget');
+
+let offsetX = 0;
+let offsetY = 0;
+let isDragging = false;
+
+tvWidget.addEventListener('mousedown', (e) => {
+
+    isDragging = true;
+
+    offsetX = e.clientX - tvWidget.offsetLeft;
+    offsetY = e.clientY - tvWidget.offsetTop;
+
+    tvWidget.style.transform = 'none';
+});
+
+document.addEventListener('mousemove', (e) => {
+
+    if (!isDragging) return;
+
+    tvWidget.style.left = `${e.clientX - offsetX}px`;
+    tvWidget.style.top = `${e.clientY - offsetY}px`;
+});
+
+document.addEventListener('mouseup', () => {
+    isDragging = false;
+});
+
+/* =========================================
+   TOUCH SUPPORT
+========================================= */
+
+tvWidget.addEventListener('touchstart', (e) => {
+
+    isDragging = true;
+
+    const touch = e.touches[0];
+
+    offsetX = touch.clientX - tvWidget.offsetLeft;
+    offsetY = touch.clientY - tvWidget.offsetTop;
+
+    tvWidget.style.transform = 'none';
+
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+
+    if (!isDragging) return;
+
+    const touch = e.touches[0];
+
+    tvWidget.style.left = `${touch.clientX - offsetX}px`;
+    tvWidget.style.top = `${touch.clientY - offsetY}px`;
+
+}, { passive: true });
+
+document.addEventListener('touchend', () => {
+    isDragging = false;
+});
 
 </script>
+
 </body>
 </html>
