@@ -11,18 +11,16 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      font-family: 'Georgia', serif;
       user-select: none;
     }
 
-    /* ── Full-page background ── */
+    /* Full-page background */
     #bg {
       position: fixed;
       inset: 0;
       background: url('wallpaper.jpg') center / cover no-repeat;
       z-index: 0;
     }
-    /* Subtle dark vignette so widget pops */
     #bg::after {
       content: '';
       position: absolute;
@@ -30,10 +28,9 @@
       background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.45) 100%);
     }
 
-    /* ── Floating draggable TV widget ── */
+    /* Draggable TV widget — NO float animation */
     #tv-widget {
       position: fixed;
-      /* start centered */
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -41,44 +38,35 @@
       z-index: 10;
       cursor: grab;
       filter: drop-shadow(0 20px 60px rgba(0,0,0,.7));
-      /* floating animation when idle */
-      animation: float 4s ease-in-out infinite;
-      transition: filter .2s;
     }
-    #tv-widget:active { cursor: grabbing; animation: none; filter: drop-shadow(0 30px 80px rgba(0,0,0,.9)); }
-    #tv-widget.dragging { animation: none; }
+    #tv-widget:active  { cursor: grabbing; }
+    #tv-widget.dragging { cursor: grabbing; }
 
-    @keyframes float {
-      0%,100% { translate: 0 0px; }
-      50%      { translate: 0 -12px; }
-    }
-
-    /* ── TV skin (PNG) ── */
+    /* TV skin container */
     #tv-skin {
       position: relative;
       width: 100%;
     }
-    #tv-skin img {
+
+    /* PNG — the visible skin */
+    #tv-skin > img {
       width: 100%;
       display: block;
       pointer-events: none;
     }
 
-    /* ── Video sits inside the screen area ──
-       The white rect in the SVG sits approximately at:
-       x=470/2000 = 23.5%, y=511/2000 = 25.55%
-       w=1111/2000 = 55.55%, h=635/2000 = 31.75%
-    */
+    /* Video sits inside the screen cutout.
+       SVG screen rect: x=470.5 y=511.1 w=1111.4 h=635.3 in a 2000x2000 viewBox
+       As percentages of 2000: left=23.525% top=25.555% w=55.57% h=31.765%        */
     #screen-area {
       position: absolute;
-      top:    25.55%;
-      left:   23.5%;
-      width:  55.55%;
-      height: 31.75%;
+      top:    25.555%;
+      left:   23.525%;
+      width:  55.57%;
+      height: 31.765%;
       overflow: hidden;
       background: #000;
-      border-radius: 2px;
-      pointer-events: none; /* clicks handled by overlay */
+      pointer-events: none;
     }
     #screen-video {
       width: 100%;
@@ -87,18 +75,7 @@
       display: block;
     }
 
-    /* Click-to-toggle overlay on the screen */
-    #screen-click {
-      position: absolute;
-      top:    25.55%;
-      left:   23.5%;
-      width:  55.55%;
-      height: 31.75%;
-      cursor: pointer;
-      z-index: 2;
-    }
-
-    /* Big play icon shown when paused */
+    /* Pause overlay on the screen */
     #play-overlay {
       position: absolute;
       inset: 0;
@@ -111,44 +88,37 @@
       pointer-events: none;
     }
     #play-overlay.hidden { opacity: 0; }
-    #play-overlay svg { width: 42px; height: 42px; opacity: .9; }
+    #play-overlay svg { width: 40px; height: 40px; }
 
-    /* ── SVG control strip ──
-       The control buttons in the SVG are near the bottom:
-       roughly y=1397-1467 out of 2000 → ~69.9% to ~73.4% from top
-       We lay the interactive SVG absolutely over the PNG, same dimensions.
-    */
+    /* Transparent click zone over the screen */
+    #screen-click {
+      position: absolute;
+      top:    25.555%;
+      left:   23.525%;
+      width:  55.57%;
+      height: 31.765%;
+      cursor: pointer;
+      z-index: 3;
+    }
+
+    /* SVG overlay — full size over the PNG, all fills hidden,
+       only the interactive hit-rects and redrawn icons remain */
     #tv-svg-overlay {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
-      pointer-events: none; /* only enable on specific elements */
+      /* hide every original white/black shape */
+      pointer-events: none;
     }
 
-    /* Hit-areas for SVG buttons */
-    #tv-svg-overlay #play-btn-hit,
-    #tv-svg-overlay #fwd-btn-hit {
-      pointer-events: all;
-      cursor: pointer;
-      fill: transparent;
-    }
-    #tv-svg-overlay #play-btn-hit:hover ~ #play-icon-group,
-    #tv-svg-overlay #fwd-btn-hit:hover  ~ #fwd-icon-group {
-      opacity: .7;
-    }
-
-    /* Icon groups react to state */
-    .btn-icon { transition: opacity .15s, transform .1s; }
-    .btn-icon:active { transform: scale(.9); }
-
-    /* ── Tooltip ── */
+    /* Tooltip */
     #tooltip {
       position: fixed;
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,.75);
+      background: rgba(0,0,0,.72);
       color: #fff;
       font-size: 13px;
       letter-spacing: .04em;
@@ -158,30 +128,27 @@
       transition: opacity .4s;
       pointer-events: none;
       z-index: 20;
+      font-family: sans-serif;
     }
     #tooltip.show { opacity: 1; }
   </style>
 </head>
 <body>
 
-<!-- Background -->
 <div id="bg"></div>
-
-<!-- Tooltip -->
 <div id="tooltip"></div>
 
-<!-- ══════════ Draggable TV Widget ══════════ -->
+<!-- ══ Draggable TV Widget ══ -->
 <div id="tv-widget">
   <div id="tv-skin">
 
-    <!-- The PNG skin -->
-    <img src="mv22.png" alt="TV skin" draggable="false" />
+    <!-- Visible PNG skin -->
+    <img src="mv22.png" alt="TV" draggable="false" />
 
-    <!-- Video in the screen cutout -->
+    <!-- Video in screen cutout -->
     <div id="screen-area">
       <video id="screen-video" src="video.mp4" loop playsinline preload="auto"></video>
       <div id="play-overlay">
-        <!-- Simple play triangle -->
         <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="40" cy="40" r="38" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.6)" stroke-width="2"/>
           <polygon points="32,24 60,40 32,56" fill="white"/>
@@ -189,44 +156,69 @@
       </div>
     </div>
 
-    <!-- Transparent click region over screen -->
-    <div id="screen-click" title="Click to play/pause"></div>
+    <!-- Click zone over screen -->
+    <div id="screen-click"></div>
 
-    <!-- SVG overlay — preserves exact proportions of the original SVG -->
+    <!--
+      SVG interactive overlay.
+      We HIDE all the original white/black shapes by overriding their fill to none/transparent.
+      We only show our custom button icons + hit areas.
+    -->
     <svg id="tv-svg-overlay"
          viewBox="0 0 2000 2000"
          xmlns="http://www.w3.org/2000/svg"
          preserveAspectRatio="xMidYMid meet">
+      <style>
+        /* Kill every original shape's fill so nothing white/black bleeds through */
+        #_x3C_background_x3E_  { fill: none !important; stroke: none !important; }
+        #_x3C_screen_x3E_      { fill: none !important; stroke: none !important; }
+        #_x3C_headlight_x3E_   { fill: none !important; stroke: none !important; }
+        #_x3C_headlight_x3E_1  { fill: none !important; stroke: none !important; }
+        #_x3C_Smile_x3E_       { fill: none !important; stroke: none !important; }
+        #_x3C_Play_button_x3E_ { fill: none !important; stroke: none !important; }
+        #_x3C_Forward_button_x3E_ { fill: none !important; stroke: none !important; }
+      </style>
 
-      <!-- ── PLAY / PAUSE button ──
-           Original play polygon: ~895–1210 x, ~1397–1467 y
-           We make a generous invisible hit-rect, then draw the icon on top.
-      -->
+      <!-- Original SVG shapes (now invisible, kept for DOM completeness) -->
+      <path id="_x3C_background_x3E_" d="M402.4,479.6c275.1-338,986.6-339.6,1248.7-12.8,97.7,121.8,109.6,277,133.3,587.2,24.7,323.1,39.3,513.1-76.9,617.9-114,102.8-235.4,16.8-692.3,12.8-452.1-4-570.6,78.2-684.6-25.6-129.1-117.5-107.1-340.8-79.5-620.5,26.4-267.4,41.8-424.5,151.3-559h0Z"/>
+      <rect id="_x3C_screen_x3E_" x="470.5" y="511.1" width="1111.4" height="635.3"/>
+      <polygon id="_x3C_headlight_x3E_" points="231 1292.4 590 1292.4 590 1420.6 230 1420.6 231 1292.4"/>
+      <polygon id="_x3C_headlight_x3E_1" points="1800.1 1292.4 1497.7 1292.4 1497.7 1420.6 1801.6 1420.6 1800.1 1292.4"/>
+      <path id="_x3C_Smile_x3E_" d="M832.6,1507.8c8.5-19.6,114.9,45.9,274.7,19.2,126.9-21.2,190.8-84.4,204.7-67.3,17.5,21.6-57.7,155.9-178.3,185.8-154.5,38.3-312-112.5-301.1-137.7h0Z"/>
+      <polygon id="_x3C_Play_button_x3E_" points="1210.3 1432.4 1150.5 1397.9 1150.5 1466.9 1210.3 1432.4"/>
+      <polygon id="_x3C_Forward_button_x3E_" points="991.3 1397.9 991.3 1429.8 936.1 1397.9 936.1 1421.3 895.7 1397.9 895.7 1466.9 936.1 1443.6 936.1 1466.9 991.3 1435.1 991.3 1466.9 1003.4 1466.9 1003.4 1397.9 991.3 1397.9"/>
 
-      <!-- Hit rect for PLAY/PAUSE (covers the left icon area) -->
-      <rect id="play-btn-hit"
-            x="860" y="1370" width="390" height="130"
-            rx="16"
-            fill="transparent"
-            stroke="none" />
+      <!-- ── Custom interactive button icons ── -->
 
-      <!-- Play icon group (shown when paused) -->
-      <g id="play-icon-group" class="btn-icon">
-        <!-- Background pill -->
-        <rect x="870" y="1380" width="370" height="108" rx="54"
-              fill="rgba(0,0,0,0.45)" />
-        <!-- Triangle (play) -->
-        <polygon id="play-triangle"
-                 points="1210,1432 1150,1397 1150,1467"
-                 fill="#ffffff" />
-        <!-- Forward double-arrow (always visible as the skip icon) -->
-        <polygon points="991,1397 991,1429 936,1397 936,1421 895,1397 895,1467 936,1443 936,1467 991,1435 991,1467 1003,1467 1003,1397"
-                 fill="#ffffff" />
-        <!-- Pause bars (hidden by default, shown when playing) -->
-        <g id="pause-bars" style="display:none">
-          <rect x="1155" y="1398" width="22" height="68" rx="4" fill="#ffffff"/>
-          <rect x="1188" y="1398" width="22" height="68" rx="4" fill="#ffffff"/>
+      <!-- PLAY / PAUSE button
+           Centred around the original play triangle (~x=1180, y=1432) -->
+      <g id="play-btn-group" style="pointer-events:all; cursor:pointer;">
+        <!-- Invisible hit area -->
+        <rect x="1100" y="1375" width="160" height="120" rx="12" fill="transparent"/>
+        <!-- Visible pill background -->
+        <rect x="1108" y="1382" width="144" height="100" rx="50"
+              fill="rgba(0,0,0,0.45)" id="play-pill"/>
+        <!-- Play triangle (shown when paused) -->
+        <polygon id="svg-play-tri"
+                 points="1210,1432 1152,1400 1152,1465"
+                 fill="#ffffff"/>
+        <!-- Pause bars (shown when playing, hidden by default) -->
+        <g id="svg-pause-bars" style="display:none">
+          <rect x="1148" y="1400" width="20" height="64" rx="4" fill="#ffffff"/>
+          <rect x="1178" y="1400" width="20" height="64" rx="4" fill="#ffffff"/>
         </g>
+      </g>
+
+      <!-- SKIP FORWARD button
+           Centred around the original forward polygon (~x=950, y=1432) -->
+      <g id="fwd-btn-group" style="pointer-events:all; cursor:pointer;">
+        <rect x="860" y="1375" width="160" height="120" rx="12" fill="transparent"/>
+        <rect x="868" y="1382" width="144" height="100" rx="50"
+              fill="rgba(0,0,0,0.45)"/>
+        <!-- Double-arrow forward: two triangles + a bar -->
+        <polygon points="955,1432 905,1402 905,1462" fill="#ffffff"/>
+        <polygon points="1000,1432 950,1402 950,1462" fill="#ffffff"/>
+        <rect x="1002" y="1402" width="14" height="60" rx="3" fill="#ffffff"/>
       </g>
 
     </svg>
@@ -236,13 +228,12 @@
 
 
 <script>
-/* ═══════════════════════════════════════════
-   1.  DRAG
-═══════════════════════════════════════════ */
+/* ════════════════════════════
+   DRAG
+════════════════════════════ */
 const widget = document.getElementById('tv-widget');
 let dragging = false, startX, startY, origLeft, origTop;
 
-// Initialise absolute position from current computed style
 function initPos() {
   const r = widget.getBoundingClientRect();
   widget.style.top    = r.top  + 'px';
@@ -252,13 +243,13 @@ function initPos() {
 initPos();
 
 widget.addEventListener('pointerdown', e => {
-  // Don't start drag if clicking screen-click or svg buttons
-  if (e.target.id === 'screen-click' || e.target.closest('#play-btn-hit')) return;
+  if (e.target.id === 'screen-click') return;
+  if (e.target.closest('#play-btn-group') || e.target.closest('#fwd-btn-group')) return;
   dragging = true;
   widget.classList.add('dragging');
   widget.setPointerCapture(e.pointerId);
-  startX = e.clientX;
-  startY = e.clientY;
+  startX   = e.clientX;
+  startY   = e.clientY;
   origLeft = parseFloat(widget.style.left);
   origTop  = parseFloat(widget.style.top);
   e.preventDefault();
@@ -276,66 +267,61 @@ window.addEventListener('pointerup', () => {
 });
 
 
-/* ═══════════════════════════════════════════
-   2.  VIDEO CONTROLS
-═══════════════════════════════════════════ */
-const video        = document.getElementById('screen-video');
-const playOverlay  = document.getElementById('play-overlay');
-const playTriangle = document.getElementById('play-triangle');
-const pauseBars    = document.getElementById('pause-bars');
-const screenClick  = document.getElementById('screen-click');
-const playHit      = document.getElementById('play-btn-hit');
-const tooltip      = document.getElementById('tooltip');
+/* ════════════════════════════
+   VIDEO
+════════════════════════════ */
+const video       = document.getElementById('screen-video');
+const playOverlay = document.getElementById('play-overlay');
+const playTri     = document.getElementById('svg-play-tri');
+const pauseBars   = document.getElementById('svg-pause-bars');
+const screenClick = document.getElementById('screen-click');
+const playBtn     = document.getElementById('play-btn-group');
+const fwdBtn      = document.getElementById('fwd-btn-group');
+const tooltip     = document.getElementById('tooltip');
+let ttTimer;
 
-let tooltipTimer;
-function showTooltip(msg) {
-  clearTimeout(tooltipTimer);
+function showTip(msg) {
+  clearTimeout(ttTimer);
   tooltip.textContent = msg;
   tooltip.classList.add('show');
-  tooltipTimer = setTimeout(() => tooltip.classList.remove('show'), 1800);
+  ttTimer = setTimeout(() => tooltip.classList.remove('show'), 1800);
 }
 
-function setPlayingState(playing) {
-  if (playing) {
+function setPlaying(on) {
+  if (on) {
     playOverlay.classList.add('hidden');
-    playTriangle.style.display = 'none';
-    pauseBars.style.display    = 'block';
+    playTri.style.display   = 'none';
+    pauseBars.style.display = 'block';
   } else {
     playOverlay.classList.remove('hidden');
-    playTriangle.style.display = '';
-    pauseBars.style.display    = 'none';
+    playTri.style.display   = '';
+    pauseBars.style.display = 'none';
   }
 }
 
 function togglePlay() {
   if (video.paused) {
-    video.play().then(() => {
-      setPlayingState(true);
-      showTooltip('▶ Playing');
-    }).catch(() => {});
+    video.play().then(() => { setPlaying(true);  showTip('▶ Playing'); }).catch(()=>{});
   } else {
     video.pause();
-    setPlayingState(false);
-    showTooltip('⏸ Paused');
+    setPlaying(false);
+    showTip('⏸ Paused');
   }
 }
 
-// Click on the screen
+function skipForward() {
+  video.currentTime = Math.min(video.duration || 0, video.currentTime + 10);
+  showTip('⏭ +10s');
+}
+
 screenClick.addEventListener('click', togglePlay);
+playBtn.addEventListener('click', e => { e.stopPropagation(); togglePlay(); });
+fwdBtn.addEventListener('click',  e => { e.stopPropagation(); skipForward(); });
 
-// SVG Play/Pause button
-playHit.addEventListener('click', e => {
-  e.stopPropagation();
-  togglePlay();
-});
-
-// Keep overlay in sync if video ends or autoplays
-video.addEventListener('play',  () => setPlayingState(true));
-video.addEventListener('pause', () => setPlayingState(false));
-video.addEventListener('ended', () => setPlayingState(false));
-
-// Initial state
-setPlayingState(false);
+video.addEventListener('play',  () => setPlaying(true));
+video.addEventListener('pause', () => setPlaying(false));
+video.addEventListener('ended', () => setPlaying(false));
+setPlaying(false);
 </script>
 </body>
 </html>
