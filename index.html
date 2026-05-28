@@ -52,11 +52,9 @@
     }
 
     /*
-      Measured directly from mv22.png (1100×1100 px):
-        left  = 178px  → 178/1100 = 16.1818%
-        top   = 231px  → 231/1100 = 21.0000%
-        width = 744px  → 744/1100 = 67.6364%
-        height= 425px  → 425/1100 = 38.6364%
+      Screen measured from mv22.png (1100×1100px):
+        left=178px → 16.1818%   top=231px  → 21.0000%
+        w=744px    → 67.6364%   h=425px    → 38.6364%
     */
     #screen-area {
       position: absolute;
@@ -89,7 +87,6 @@
     #play-overlay.hidden { opacity: 0; }
     #play-overlay svg { width: 40px; height: 40px; }
 
-    /* Click zone exactly over the screen */
     #screen-click {
       position: absolute;
       left:   16.1818%;
@@ -106,6 +103,86 @@
       width: 100%;
       height: 100%;
       pointer-events: none;
+    }
+
+    /* ── Volume slider popup ──
+       Appears above the volume button when clicked.
+       Positioned in CSS over the widget using the same
+       SVG-coordinate-to-percent mapping as the buttons.
+       Volume btn is at SVG x≈1280, y≈1432 → ~64% x, ~71.6% y
+    */
+    #vol-popup {
+      position: absolute;
+      /* horizontally centred on the volume button */
+      left: 64%;
+      /* sits above the button row */
+      bottom: 24%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: rgba(10,10,10,0.82);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 10px 8px;
+      z-index: 5;
+      pointer-events: all;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .2s, visibility .2s;
+    }
+    #vol-popup.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Vertical range slider */
+    #vol-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      writing-mode: vertical-lr;
+      direction: rtl;
+      width: 4px;
+      height: 70px;
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+    }
+    #vol-slider::-webkit-slider-runnable-track {
+      width: 4px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 2px;
+    }
+    #vol-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      margin-left: -5px;
+      cursor: pointer;
+      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    }
+    #vol-slider::-moz-range-track {
+      width: 4px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 2px;
+    }
+    #vol-slider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    #vol-label {
+      font-family: sans-serif;
+      font-size: 9px;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: .03em;
     }
 
     #tooltip {
@@ -150,19 +227,34 @@
 
     <div id="screen-click"></div>
 
+    <!-- Volume slider popup — child of tv-skin so % positions are relative to widget -->
+    <div id="vol-popup">
+      <input id="vol-slider" type="range" min="0" max="100" value="80" />
+      <span id="vol-label">80%</span>
+    </div>
+
+    <!--
+      SVG overlay — same 2000×2000 viewBox.
+      All decorative shapes hidden; only interactive buttons rendered.
+
+      Button x-centres in SVG space:
+        Forward : ~950   (x 895–1003)
+        Play    : ~1180  (x 1150–1210)
+        Volume  : ~1310  (new, to the right of play)
+    -->
     <svg id="tv-svg-overlay"
          viewBox="0 0 2000 2000"
          xmlns="http://www.w3.org/2000/svg"
          preserveAspectRatio="xMidYMid meet">
 
-      <!-- Hide all white/decorative shapes — they're on the PNG -->
+      <!-- Hide decorative SVG shapes -->
       <path d="M402.4,479.6c275.1-338,986.6-339.6,1248.7-12.8,97.7,121.8,109.6,277,133.3,587.2,24.7,323.1,39.3,513.1-76.9,617.9-114,102.8-235.4,16.8-692.3,12.8-452.1-4-570.6,78.2-684.6-25.6-129.1-117.5-107.1-340.8-79.5-620.5,26.4-267.4,41.8-424.5,151.3-559h0Z" fill="none" stroke="none"/>
       <rect x="470.5" y="511.1" width="1111.4" height="635.3" fill="none" stroke="none"/>
       <polygon points="231 1292.4 590 1292.4 590 1420.6 230 1420.6 231 1292.4" fill="none" stroke="none"/>
       <polygon points="1800.1 1292.4 1497.7 1292.4 1497.7 1420.6 1801.6 1420.6 1800.1 1292.4" fill="none" stroke="none"/>
       <path d="M832.6,1507.8c8.5-19.6,114.9,45.9,274.7,19.2,126.9-21.2,190.8-84.4,204.7-67.3,17.5,21.6-57.7,155.9-178.3,185.8-154.5,38.3-312-112.5-301.1-137.7h0Z" fill="none" stroke="none"/>
 
-      <!-- PLAY / PAUSE — original triangle from SVG -->
+      <!-- ── PLAY / PAUSE ── original triangle -->
       <g id="play-btn-group" style="pointer-events:all; cursor:pointer;">
         <rect x="1110" y="1360" width="140" height="145" rx="10" fill="transparent"/>
         <polygon id="svg-play-tri"
@@ -174,11 +266,34 @@
         </g>
       </g>
 
-      <!-- FORWARD — exact original polygon from SVG -->
+      <!-- ── FORWARD ── exact original polygon -->
       <g id="fwd-btn-group" style="pointer-events:all; cursor:pointer;">
         <rect x="855" y="1360" width="188" height="145" rx="10" fill="transparent"/>
         <polygon points="991.3,1397.9 991.3,1429.8 936.1,1397.9 936.1,1421.3 895.7,1397.9 895.7,1466.9 936.1,1443.6 936.1,1466.9 991.3,1435.1 991.3,1466.9 1003.4,1466.9 1003.4,1397.9 991.3,1397.9"
                  fill="#010101"/>
+      </g>
+
+      <!-- ── VOLUME button ── speaker icon, same style/size as play button -->
+      <!-- Centred at x=1310, y=1432 — right of play, within the red body -->
+      <g id="vol-btn-group" style="pointer-events:all; cursor:pointer;">
+        <!-- hit area -->
+        <rect x="1255" y="1360" width="140" height="145" rx="10" fill="transparent"/>
+        <!-- Speaker body: small rect -->
+        <rect x="1272" y="1410" width="22" height="44" rx="3" fill="#010101"/>
+        <!-- Speaker cone: trapezoid -->
+        <polygon points="1294,1410 1294,1454 1326,1472 1326,1392" fill="#010101"/>
+        <!-- Sound waves (shown when not muted) -->
+        <g id="vol-waves">
+          <!-- wave 1 -->
+          <path d="M1336,1416 Q1352,1432 1336,1448" fill="none" stroke="#010101" stroke-width="14" stroke-linecap="round"/>
+          <!-- wave 2 -->
+          <path d="M1354,1402 Q1382,1432 1354,1462" fill="none" stroke="#010101" stroke-width="14" stroke-linecap="round"/>
+        </g>
+        <!-- Mute X (hidden by default) -->
+        <g id="vol-mute-x" style="display:none">
+          <line x1="1336" y1="1408" x2="1384" y2="1456" stroke="#010101" stroke-width="16" stroke-linecap="round"/>
+          <line x1="1384" y1="1408" x2="1336" y2="1456" stroke="#010101" stroke-width="16" stroke-linecap="round"/>
+        </g>
       </g>
 
     </svg>
@@ -199,7 +314,10 @@ let dragging = false, startX, startY, origLeft, origTop;
 
 widget.addEventListener('pointerdown', e => {
   if (e.target.id === 'screen-click') return;
-  if (e.target.closest('#play-btn-group') || e.target.closest('#fwd-btn-group')) return;
+  if (e.target.closest('#play-btn-group') ||
+      e.target.closest('#fwd-btn-group')  ||
+      e.target.closest('#vol-btn-group')  ||
+      e.target.closest('#vol-popup')) return;
   dragging = true;
   widget.classList.add('dragging');
   widget.setPointerCapture(e.pointerId);
@@ -265,6 +383,59 @@ video.addEventListener('play',  () => setPlaying(true));
 video.addEventListener('pause', () => setPlaying(false));
 video.addEventListener('ended', () => setPlaying(false));
 setPlaying(false);
+
+/* ════════ VOLUME ════════ */
+const volBtn    = document.getElementById('vol-btn-group');
+const volPopup  = document.getElementById('vol-popup');
+const volSlider = document.getElementById('vol-slider');
+const volLabel  = document.getElementById('vol-label');
+const volWaves  = document.getElementById('vol-waves');
+const volMuteX  = document.getElementById('vol-mute-x');
+
+// Set initial volume
+video.volume = 0.8;
+
+let volOpen = false;
+
+function openVolPopup() {
+  volOpen = true;
+  volPopup.classList.add('open');
+}
+function closeVolPopup() {
+  volOpen = false;
+  volPopup.classList.remove('open');
+}
+
+volBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  volOpen ? closeVolPopup() : openVolPopup();
+});
+
+// Close popup when clicking outside
+document.addEventListener('pointerdown', e => {
+  if (volOpen &&
+      !e.target.closest('#vol-popup') &&
+      !e.target.closest('#vol-btn-group')) {
+    closeVolPopup();
+  }
+});
+
+volSlider.addEventListener('input', () => {
+  const val = parseInt(volSlider.value);
+  video.volume  = val / 100;
+  video.muted   = val === 0;
+  volLabel.textContent = val + '%';
+
+  // Toggle speaker icon
+  const muted = val === 0;
+  volWaves.style.display  = muted ? 'none'  : '';
+  volMuteX.style.display  = muted ? 'block' : 'none';
+
+  showTip(muted ? '🔇 Muted' : `🔊 ${val}%`);
+});
+
+// Stop popup drags from moving the widget
+volPopup.addEventListener('pointerdown', e => e.stopPropagation());
 </script>
 </body>
 </html>
