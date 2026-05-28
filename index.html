@@ -106,16 +106,14 @@
     }
 
     /*
-      Volume popup — positioned above the volume button.
-      Volume btn centre in PNG %: x≈57%, y≈68.5%
-      Popup sits above it, so bottom edge at ~headlight top (60.45%)
-      We anchor bottom to ~31% from bottom of widget (= 100-69%)
-      and left at 57% horizontally.
+      Volume popup — floats above the volume button.
+      Volume btn is at SVG x=1325/2000=66.25%, y=1469/2000=73.45%
+      Popup anchored: left=66.25%, bottom = (1-0.7345)*100 + a bit = ~29%
     */
     #vol-popup {
       position: absolute;
-      left: 57%;
-      bottom: 31%;
+      left: 66.25%;
+      bottom: 29%;
       transform: translateX(-50%);
       display: flex;
       flex-direction: column;
@@ -234,62 +232,54 @@
     <!--
       SVG overlay — 2000×2000 viewBox.
 
-      Headlights in SVG coords (from the original SVG):
-        Left HL:  x 231–590,  y 1292–1420
-        Right HL: x 1497–1800, y 1292–1420
-        Gap between them: x 590–1497, centre x=1044
-        Vertical centre of headlight band: y=(1292+1420)/2 = 1356
+      All buttons positioned BELOW the Rust-eze badge.
+      Measured from PNG (1100px) → scaled to SVG (2000):
+        Badge bottom:  y=775px  → SVG y=1409
+        HL bottom:     y=842px  → SVG y=1531
+        Button centre: y=808px  → SVG y=1469
 
-      We place three buttons evenly in the gap x=590–1497:
-        Gap width = 907, split into 4 zones → buttons at x ≈ 817, 1044, 1270
-        Forward  → x=817
-        Play     → x=1044
-        Volume   → x=1270
-        All at y centre = 1356
+      Left HL ends (PNG x=251)  → SVG x=456
+      Right HL starts (PNG x=888) → SVG x=1615
+      Gap split into 4 zones:
+        Forward  SVG x=746
+        Play     SVG x=1036
+        Volume   SVG x=1325
     -->
     <svg id="tv-svg-overlay"
          viewBox="0 0 2000 2000"
          xmlns="http://www.w3.org/2000/svg"
          preserveAspectRatio="xMidYMid meet">
 
-      <!-- Hide all decorative shapes — they live on the PNG -->
+      <!-- Hide all original decorative shapes -->
       <path d="M402.4,479.6c275.1-338,986.6-339.6,1248.7-12.8,97.7,121.8,109.6,277,133.3,587.2,24.7,323.1,39.3,513.1-76.9,617.9-114,102.8-235.4,16.8-692.3,12.8-452.1-4-570.6,78.2-684.6-25.6-129.1-117.5-107.1-340.8-79.5-620.5,26.4-267.4,41.8-424.5,151.3-559h0Z" fill="none" stroke="none"/>
       <rect x="470.5" y="511.1" width="1111.4" height="635.3" fill="none" stroke="none"/>
       <polygon points="231 1292.4 590 1292.4 590 1420.6 230 1420.6 231 1292.4" fill="none" stroke="none"/>
       <polygon points="1800.1 1292.4 1497.7 1292.4 1497.7 1420.6 1801.6 1420.6 1800.1 1292.4" fill="none" stroke="none"/>
       <path d="M832.6,1507.8c8.5-19.6,114.9,45.9,274.7,19.2,126.9-21.2,190.8-84.4,204.7-67.3,17.5,21.6-57.7,155.9-178.3,185.8-154.5,38.3-312-112.5-301.1-137.7h0Z" fill="none" stroke="none"/>
-      <!-- Also hide original play/forward so we redraw them in new positions -->
       <polygon points="1210.3 1432.4 1150.5 1397.9 1150.5 1466.9 1210.3 1432.4" fill="none" stroke="none"/>
       <polygon points="991.3 1397.9 991.3 1429.8 936.1 1397.9 936.1 1421.3 895.7 1397.9 895.7 1466.9 936.1 1443.6 936.1 1466.9 991.3 1435.1 991.3 1466.9 1003.4 1466.9 1003.4 1397.9 991.3 1397.9" fill="none" stroke="none"/>
 
       <!--
-        Buttons repositioned to sit between the headlights.
-        Y centre = 1356.  Each button is ~69px tall (1292–1420 = 128px band, icons ~69px).
-        Icon half-height = 34 → top=1322, bottom=1390
-
-        FORWARD button — centred at x=817
-          Original shape spans ~108px wide. We shift it so its centre is 817.
-          Original centre x = (895.7+1003.4)/2 = 949.55
-          Offset = 817 - 949.55 = -132.55 → translate(-132.55, -76)
-          (original y centre was 1432, new y centre 1356 → dy = -76)
+        ── FORWARD button ── centred at x=746, y=1469
+        Original forward polygon centre was x=949, y=1432
+        translate = (746-949, 1469-1432) = (-203, 37)
       -->
       <g id="fwd-btn-group" style="pointer-events:all; cursor:pointer;">
-        <rect x="737" y="1292" width="160" height="128" rx="10" fill="transparent"/>
-        <g transform="translate(-132.55,-76)">
+        <rect x="656" y="1409" width="180" height="120" rx="10" fill="transparent"/>
+        <g transform="translate(-203, 37)">
           <polygon points="991.3,1397.9 991.3,1429.8 936.1,1397.9 936.1,1421.3 895.7,1397.9 895.7,1466.9 936.1,1443.6 936.1,1466.9 991.3,1435.1 991.3,1466.9 1003.4,1466.9 1003.4,1397.9 991.3,1397.9"
                    fill="#010101"/>
         </g>
       </g>
 
       <!--
-        PLAY/PAUSE button — centred at x=1044
-          Original triangle centre x = (1150.5+1210.3)/2 = 1180.4
-          Original centre y = (1397.9+1466.9)/2 = 1432.4
-          Offset x = 1044 - 1180.4 = -136.4   dy = 1356 - 1432.4 = -76.4
+        ── PLAY / PAUSE button ── centred at x=1036, y=1469
+        Original play triangle centre was x=1180, y=1432
+        translate = (1036-1180, 1469-1432) = (-144, 37)
       -->
       <g id="play-btn-group" style="pointer-events:all; cursor:pointer;">
-        <rect x="964" y="1292" width="160" height="128" rx="10" fill="transparent"/>
-        <g transform="translate(-136.4,-76.4)">
+        <rect x="946" y="1409" width="180" height="120" rx="10" fill="transparent"/>
+        <g transform="translate(-144, 37)">
           <polygon id="svg-play-tri"
                    points="1210.3,1432.4 1150.5,1397.9 1150.5,1466.9"
                    fill="#010101"/>
@@ -301,24 +291,25 @@
       </g>
 
       <!--
-        VOLUME button — centred at x=1270, y=1356
-        Speaker icon drawn directly at its new position.
+        ── VOLUME button ── centred at x=1325, y=1469
+        Speaker icon drawn directly at new position.
+        Icon spans ~80px wide, ~70px tall → top=1434, bottom=1504
       -->
       <g id="vol-btn-group" style="pointer-events:all; cursor:pointer;">
-        <rect x="1190" y="1292" width="160" height="128" rx="10" fill="transparent"/>
-        <!-- Speaker body rect: centred around 1270,1356  icon ~60px wide, 60px tall -->
-        <rect x="1234" y="1326" width="18" height="38" rx="3" fill="#010101"/>
+        <rect x="1235" y="1409" width="180" height="120" rx="10" fill="transparent"/>
+        <!-- Speaker body -->
+        <rect x="1290" y="1436" width="18" height="38" rx="3" fill="#010101"/>
         <!-- Speaker cone -->
-        <polygon points="1252,1326 1252,1364 1280,1380 1280,1310" fill="#010101"/>
+        <polygon points="1308,1436 1308,1474 1338,1490 1338,1420" fill="#010101"/>
         <!-- Sound waves -->
         <g id="vol-waves">
-          <path d="M1288,1330 Q1302,1356 1288,1382" fill="none" stroke="#010101" stroke-width="12" stroke-linecap="round"/>
-          <path d="M1304,1318 Q1326,1356 1304,1394" fill="none" stroke="#010101" stroke-width="12" stroke-linecap="round"/>
+          <path d="M1346,1440 Q1360,1469 1346,1498" fill="none" stroke="#010101" stroke-width="14" stroke-linecap="round"/>
+          <path d="M1362,1426 Q1388,1469 1362,1512" fill="none" stroke="#010101" stroke-width="14" stroke-linecap="round"/>
         </g>
         <!-- Mute X -->
         <g id="vol-mute-x" style="display:none">
-          <line x1="1288" y1="1322" x2="1328" y2="1390" stroke="#010101" stroke-width="14" stroke-linecap="round"/>
-          <line x1="1328" y1="1322" x2="1288" y2="1390" stroke="#010101" stroke-width="14" stroke-linecap="round"/>
+          <line x1="1346" y1="1432" x2="1390" y2="1506" stroke="#010101" stroke-width="14" stroke-linecap="round"/>
+          <line x1="1390" y1="1432" x2="1346" y2="1506" stroke="#010101" stroke-width="14" stroke-linecap="round"/>
         </g>
       </g>
 
