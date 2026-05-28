@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive SVG Widget</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: url('wallpaper.jpg') no-repeat center center fixed;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+        }
+
+        #widget-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px; /* Adjusted size for better visibility */
+            cursor: grab;
+            user-select: none;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+        }
+
+        #widget-container:active {
+            cursor: grabbing;
+        }
+
+        #video-overlay {
+            position: absolute;
+            /* These percentages are calculated based on the SVG viewBox (2000x2000) */
+            /* Screen rect: x="470.51" y="511.1" width="1111.45" height="635.34" */
+            top: 25.55%;    /* 511.1 / 2000 */
+            left: 23.52%;   /* 470.51 / 2000 */
+            width: 55.57%;  /* 1111.45 / 2000 */
+            height: 31.76%; /* 635.34 / 2000 */
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            pointer-events: none; /* Allow clicks to pass through to the SVG if needed, but we'll control via buttons */
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Make buttons look interactive */
+        #_x3C_Play_button_x3E_, #_x3C_Forward_button_x3E_ {
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        #_x3C_Play_button_x3E_:hover, #_x3C_Forward_button_x3E_:hover {
+            opacity: 0.8;
+        }
+
+        #_x3C_Play_button_x3E_:active, #_x3C_Forward_button_x3E_:active {
+            transform: scale(0.95);
+            transform-origin: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="widget-container">
+        <!-- Video Overlay -->
+        <div id="video-overlay">
+            <video id="myVideo" preload="auto" loop>
+                <source src="video.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <!-- SVG Widget -->
+        <svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 2000 2000">
+            <defs>
+              <style>
+                .st0 { fill: #010101; }
+                .st1 { fill: #fff200; stroke: #231f20; stroke-miterlimit: 10; }
+                .st2 { fill: #fff; stroke: #231f20; stroke-miterlimit: 10; }
+                .st3 { fill: #ed1c24; stroke: #231f20; stroke-miterlimit: 10; }
+              </style>
+            </defs>
+            <path id="_x3C_background_x3E_" class="st3" d="M402.4,479.57c275.1-337.96,986.63-339.6,1248.72-12.82,97.72,121.83,109.59,276.95,133.33,587.18,24.73,323.12,39.28,513.13-76.92,617.95-114.01,102.85-235.44,16.83-692.31,12.82-452.11-3.97-570.57,78.19-684.62-25.64-129.06-117.51-107.05-340.82-79.49-620.51,26.35-267.41,41.84-424.52,151.28-558.97Z"/>
+            <!-- The screen rect is kept for reference/styling but the video is overlaid -->
+            <rect id="_x3C_screen_x3E_" class="st2" x="470.51" y="511.1" width="1111.45" height="635.34"/>
+            <polygon id="_x3C_headlight_x3E_" class="st1" points="230.98 1292.41 590 1292.41 590 1420.62 230.02 1420.62 230.98 1292.41"/>
+            <polygon id="_x3C_headlight_x3E_1" data-name="_x3C_headlight_x3E_" class="st1" points="1800.08 1292.41 1497.69 1292.41 1497.69 1420.62 1801.62 1420.62 1800.08 1292.41"/>
+            <path id="_x3C_Smile_x3E_" class="st2" d="M832.56,1507.76c8.48-19.57,114.86,45.92,274.71,19.23,126.92-21.2,190.82-84.37,204.66-67.31,17.5,21.58-57.65,155.87-178.29,185.77-154.52,38.27-311.97-112.52-301.08-137.69Z"/>
+            <polygon id="_x3C_Play_button_x3E_" class="st0" points="1210.28 1432.44 1150.48 1397.92 1150.48 1466.94 1210.28 1432.44"/>
+            <polygon id="_x3C_Forward_button_x3E_" class="st0" points="991.27 1397.92 991.27 1429.77 936.1 1397.92 936.1 1421.27 895.66 1397.92 895.66 1466.94 936.1 1443.59 936.1 1466.94 991.27 1435.09 991.27 1466.94 1003.36 1466.94 1003.36 1397.92 991.27 1397.92"/>
+        </svg>
+    </div>
+
+    <script>
+        const widget = document.getElementById('widget-container');
+        const video = document.getElementById('myVideo');
+        const playBtn = document.getElementById('_x3C_Play_button_x3E_');
+        const forwardBtn = document.getElementById('_x3C_Forward_button_x3E_');
+
+        // --- Video Controls ---
+        playBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent drag trigger
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        });
+
+        forwardBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent drag trigger
+            // Skip forward 5 seconds
+            video.currentTime += 5;
+        });
+
+        // --- Draggable Logic ---
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+
+        // Since the widget starts at translate(-50%, -50%), we need to handle the initial center
+        const rect = widget.getBoundingClientRect();
+        xOffset = 0; 
+        yOffset = 0;
+
+        widget.addEventListener('mousedown', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+
+        function dragStart(e) {
+            // Only drag if clicking the background of the widget, not buttons
+            if (e.target.id === '_x3C_Play_button_x3E_' || e.target.id === '_x3C_Forward_button_x3E_') return;
+
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+            isDragging = true;
+        }
+
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+
+                xOffset = currentX;
+                yOffset = currentY;
+
+                setTranslate(currentX, currentY, widget);
+            }
+        }
+
+        function setTranslate(xPos, yPos, el) {
+            el.style.transform = `translate(calc(-50% + ${xPos}px), calc(-50% + ${yPos}px))`;
+        }
+
+        function dragEnd(e) {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
+        }
+
+        // Support for touch devices
+        widget.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            dragStart({
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                target: e.target
+            });
+        });
+        document.addEventListener('touchmove', (e) => {
+            const touch = e.touches[0];
+            drag({
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                preventDefault: () => e.preventDefault()
+            });
+        }, { passive: false });
+        document.addEventListener('touchend', dragEnd);
+
+    </script>
+</body>
+</html>
