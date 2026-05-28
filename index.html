@@ -11,8 +11,8 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: url('mv22.svg') no-repeat center center fixed;
-            background-size: cover;
+            /* Background of the page */
+            background: #222; 
             font-family: Arial, sans-serif;
         }
 
@@ -21,7 +21,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 500px; /* Adjusted size for better visibility */
+            width: 500px;
             cursor: grab;
             user-select: none;
             filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
@@ -31,20 +31,41 @@
             cursor: grabbing;
         }
 
+        /* The SVG under the PNG */
+        #under-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: auto;
+            z-index: 1;
+            opacity: 0.5; /* Making it transparent as requested */
+            pointer-events: none;
+        }
+
+        /* The PNG background layer */
+        #bg-image {
+            position: relative;
+            width: 100%;
+            height: auto;
+            display: block;
+            z-index: 2;
+            pointer-events: none;
+        }
+
         #video-overlay {
             position: absolute;
-            /* These percentages are calculated based on the SVG viewBox (2000x2000) */
-            /* Screen rect: x="470.51" y="511.1" width="1111.45" height="635.34" */
-            top: 25.55%;    /* 511.1 / 2000 */
-            left: 23.52%;   /* 470.51 / 2000 */
-            width: 55.57%;  /* 1111.45 / 2000 */
-            height: 31.76%; /* 635.34 / 2000 */
+            /* Percentages based on the original SVG coordinate system (2000x2000) */
+            top: 25.55%;    
+            left: 23.52%;   
+            width: 55.57%;  
+            height: 31.76%; 
             background: #000;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            pointer-events: none; /* Allow clicks to pass through to the SVG if needed, but we'll control via buttons */
+            z-index: 3; /* On top of PNG */
         }
 
         video {
@@ -53,23 +74,28 @@
             object-fit: cover;
         }
 
-        svg {
+        /* Buttons on top of everything */
+        #controls-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: auto;
-            display: block;
+            z-index: 4;
+            pointer-events: none; /* Allow clicks to pass through to buttons */
         }
 
-        /* Make buttons look interactive */
-        #_x3C_Play_button_x3E_, #_x3C_Forward_button_x3E_ {
+        .interactive-btn {
             cursor: pointer;
+            pointer-events: auto;
             transition: opacity 0.2s, transform 0.1s;
         }
 
-        #_x3C_Play_button_x3E_:hover, #_x3C_Forward_button_x3E_:hover {
+        .interactive-btn:hover {
             opacity: 0.8;
         }
 
-        #_x3C_Play_button_x3E_:active, #_x3C_Forward_button_x3E_:active {
+        .interactive-btn:active {
             transform: scale(0.95);
             transform-origin: center;
         }
@@ -89,7 +115,13 @@
 <body>
 
     <div id="widget-container">
-        <!-- Video Overlay -->
+        <!-- 1. mv22.svg (Transparent, Underneath) -->
+        <img id="under-svg" src="mv22.svg" alt="Background SVG">
+
+        <!-- 2. mv22.png (Middle Layer) -->
+        <img id="bg-image" src="mv22.png" alt="Background PNG">
+
+        <!-- 3. Video Overlay (On top of PNG) -->
         <div id="video-overlay">
             <video id="myVideo" preload="auto" loop>
                 <source src="video.mp4" type="video/mp4">
@@ -97,44 +129,26 @@
             </video>
         </div>
 
-        <!-- SVG Widget -->
-        <svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 2000 2000">
+        <!-- 4. Controls SVG (Top Layer - Only Buttons) -->
+        <svg id="controls-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 2000">
             <defs>
-              <style>
-                .st0 { fill: #010101; }
-                .st1 { fill: #fff200; stroke: #231f20; stroke-miterlimit: 10; }
-                .st2 { fill: #fff; stroke: #231f20; stroke-miterlimit: 10; }
-                .st3 { fill: #ed1c24; stroke: #231f20; stroke-miterlimit: 10; }
-              </style>
-              <!-- Clip path for the background image -->
-              <clipPath id="bg-clip">
-                <path d="M402.4,479.57c275.1-337.96,986.63-339.6,1248.72-12.82,97.72,121.83,109.59,276.95,133.33,587.18,24.73,323.12,39.28,513.13-76.92,617.95-114.01,102.85-235.44,16.83-692.31,12.82-452.11-3.97-570.57,78.19-684.62-25.64-129.06-117.51-107.05-340.82-79.49-620.51,26.35-267.41,41.84-424.52,151.28-558.97Z"/>
-              </clipPath>
+                <style>
+                    .st0 { fill: #010101; }
+                </style>
             </defs>
             
-            <!-- Replaced background path with image clipped to the same shape -->
-            <image id="_x3C_background_x3E_" href="mv22.png" x="0" y="0" width="2000" height="2000" preserveAspectRatio="xMidYMid slice" clip-path="url(#bg-clip)" />
-
-            <!-- The screen rect is kept for reference/styling but the video is overlaid -->
-            <rect id="_x3C_screen_x3E_" class="st2" x="470.51" y="511.1" width="1111.45" height="635.34"/>
-            <polygon id="_x3C_headlight_x3E_" class="st1" points="230.98 1292.41 590 1292.41 590 1420.62 230.02 1420.62 230.98 1292.41"/>
-            <polygon id="_x3C_headlight_x3E_1" data-name="_x3C_headlight_x3E_" class="st1" points="1800.08 1292.41 1497.69 1292.41 1497.69 1420.62 1801.62 1420.62 1800.08 1292.41"/>
-            <path id="_x3C_Smile_x3E_" class="st2" d="M832.56,1507.76c8.48-19.57,114.86,45.92,274.71,19.23,126.92-21.2,190.82-84.37,204.66-67.31,17.5,21.58-57.65,155.87-178.29,185.77-154.52,38.27-311.97-112.52-301.08-137.69Z"/>
-            
-            <!-- Play button group to handle icon swapping -->
-            <g id="_x3C_Play_button_x3E_">
-                <!-- Transparent hit area to make clicking easier -->
+            <!-- Play button group -->
+            <g id="_x3C_Play_button_x3E_" class="interactive-btn">
                 <rect x="1140" y="1390" width="80" height="80" fill="transparent" />
-                <!-- Play Icon (Triangle) -->
                 <polygon id="play-icon" class="st0" points="1210.28 1432.44 1150.48 1397.92 1150.48 1466.94 1210.28 1432.44"/>
-                <!-- Pause Icon (Two bars) - initially hidden via CSS -->
                 <g id="pause-icon" class="st0">
                     <rect x="1150" y="1400" width="20" height="65" />
                     <rect x="1185" y="1400" width="20" height="65" />
                 </g>
             </g>
 
-            <polygon id="_x3C_Forward_button_x3E_" class="st0" points="991.27 1397.92 991.27 1429.77 936.1 1397.92 936.1 1421.27 895.66 1397.92 895.66 1466.94 936.1 1443.59 936.1 1466.94 991.27 1435.09 991.27 1466.94 1003.36 1466.94 1003.36 1397.92 991.27 1397.92"/>
+            <!-- Forward button -->
+            <polygon id="_x3C_Forward_button_x3E_" class="interactive-btn st0" points="991.27 1397.92 991.27 1429.77 936.1 1397.92 936.1 1421.27 895.66 1397.92 895.66 1466.94 936.1 1443.59 936.1 1466.94 991.27 1435.09 991.27 1466.94 1003.36 1466.94 1003.36 1397.92 991.27 1397.92"/>
         </svg>
     </div>
 
@@ -146,7 +160,7 @@
 
         // --- Video Controls ---
         playBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent drag trigger
+            e.stopPropagation();
             if (video.paused) {
                 video.play();
                 playBtn.classList.add('playing');
@@ -156,14 +170,12 @@
             }
         });
 
-        // Update button state if video ends
         video.addEventListener('ended', () => {
             playBtn.classList.remove('playing');
         });
 
         forwardBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent drag trigger
-            // Skip forward 5 seconds
+            e.stopPropagation();
             video.currentTime += 5;
         });
 
@@ -181,9 +193,8 @@
         document.addEventListener('mouseup', dragEnd);
 
         function dragStart(e) {
-            // Only drag if clicking the background or non-interactive parts
-            // We check if the click target is the play or forward button group/elements
-            if (playBtn.contains(e.target) || forwardBtn.contains(e.target)) return;
+            // Only drag if not clicking interactive buttons
+            if (e.target.closest('.interactive-btn')) return;
 
             initialX = e.clientX - xOffset;
             initialY = e.clientY - yOffset;
@@ -195,10 +206,8 @@
                 e.preventDefault();
                 currentX = e.clientX - initialX;
                 currentY = e.clientY - initialY;
-
                 xOffset = currentX;
                 yOffset = currentY;
-
                 setTranslate(currentX, currentY, widget);
             }
         }
